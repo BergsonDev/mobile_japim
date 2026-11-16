@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.japim.ui.components.cards.GenerateCard
+import com.example.japim.ui.components.search.GenerateSearchBar
 
 @Composable
 private fun viewStarterPage(modifier: Modifier = Modifier){
@@ -26,6 +27,8 @@ private fun viewStarterPage(modifier: Modifier = Modifier){
             .background(Color.Black)
             .verticalScroll(rememberScrollState())
     ) {
+
+        GenerateSearchBar("teste",{});
 
         GenerateCard(
             "Lorem Ipsum",
