@@ -1,0 +1,12 @@
+scalar LocalDateTime
+scalar Date
+scalar LocalTime
+
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+
+type Query
+type Mutation
