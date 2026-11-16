@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.japim.ui.components.GenerateHeader
 import com.example.japim.ui.components.cards.GenerateCard
 import com.example.japim.ui.components.search.GenerateSearchBar
 
@@ -49,5 +50,15 @@ private fun viewStarterPage(modifier: Modifier = Modifier){
 @Preview(showBackground = true)
 @Composable
 fun starterPage(){
-    viewStarterPage();
+    GenerateHeader(
+        contentPage = { paddingResponse ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingResponse) // O padding do header entra aqui
+            ) {
+                viewStarterPage()
+            }
+        }
+    );
 }
