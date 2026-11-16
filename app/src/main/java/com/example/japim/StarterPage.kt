@@ -13,36 +13,60 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.japim.graphql.GetEventsQuery
+import com.example.japim.graphql.type.Event
+import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.components.GenerateHeader
 import com.example.japim.ui.components.cards.GenerateCard
 import com.example.japim.ui.components.search.GenerateSearchBar
 
 @Composable
-private fun viewStarterPage(modifier: Modifier = Modifier){
+private fun viewStarterPage(
+    modifier: Modifier = Modifier,
+    eventRemote: EventRemoteDataSource? = null
+){
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
             .background(Color.Black)
             .verticalScroll(rememberScrollState())
     ) {
 
         GenerateSearchBar("teste",{});
 
-        GenerateCard(
-            "Lorem Ipsum",
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas  interdum faucibus justo, mattis ultricies ipsum rhoncus sed. Integer  egestas dictum neque at tincidunt. Pellentesque pulvinar enim non velit  semper ....",
-            "Palestrante",
-            10,
-            10,
-            false,
-            {
-                println("fala");
+        var events by remember {
+            mutableStateOf<List<GetEventsQuery.Event?>?>(emptyList())
+        }
+        LaunchedEffect(Unit) {
+            events = eventRemote?.fetchEvents();
 
+        }
+
+        events?.forEach { event ->
+            if (event != null) {
+                GenerateCard(
+                    event.name,
+                    event.short_description,
+                    event.speakers.firstOrNull()?.name ?: "",
+                    10,
+                    10,
+                    event.is_payment,
+                    {
+                        println("fala")
+                    }
+                )
             }
-        )
+        }
+
     }
 }
 
@@ -50,6 +74,8 @@ private fun viewStarterPage(modifier: Modifier = Modifier){
 @Preview(showBackground = true)
 @Composable
 fun starterPage(){
+    val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
+
     GenerateHeader(
         contentPage = { paddingResponse ->
             Column(
@@ -57,7 +83,7 @@ fun starterPage(){
                     .fillMaxSize()
                     .padding(paddingResponse) // O padding do header entra aqui
             ) {
-                viewStarterPage()
+                viewStarterPage(eventRemote =  eventRemoteDataSource)
             }
         }
     );

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.apollographql.apollo") version "5.2.0"
 }
 
 android {
@@ -27,6 +28,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -35,7 +37,18 @@ android {
     }
 }
 
+apollo {
+    service("service") {
+        packageName.set("com.example.japim.graphql")
+
+        mapScalar("LocalDateTime", "java.time.LocalDateTime", "com.example.japim.apolloClient.LocalDateTimeAdapter")
+        mapScalar("Date", "java.time.LocalDate", "com.example.japim.apolloClient.LocalDateAdapter")
+        mapScalar("LocalTime", "java.time.LocalTime", "com.example.japim.apolloClient.LocalTimeAdapter")
+    }
+}
+
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
@@ -53,4 +66,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation("com.apollographql.apollo:apollo-runtime:5.2.0")
 }

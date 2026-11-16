@@ -59,7 +59,7 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = PRIMARY,
                 fontFamily = MPlus2,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
@@ -68,7 +68,7 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = PRIMARY,
                 fontFamily = MPlus2
             )
 
@@ -106,7 +106,8 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
                     Text(
                         totalParticipants.toString(),
                         fontFamily = MPlus2,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color=FIFTH
                     )
 
 
@@ -118,7 +119,9 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
                     Text(
                         totalVolunteers.toString(),
                         fontFamily = MPlus2,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color=FIFTH
+
                     )
 
                     if(isPayment){
@@ -131,7 +134,9 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
                         Text(
                             "Pago",
                             fontFamily = MPlus2,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color=FIFTH
+
                         )
                     }
 
@@ -143,7 +148,8 @@ fun GenerateCard(title : String, text : String, speaker : String, totalParticipa
                     Text(
                         speaker,
                         fontFamily = MPlus2,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = FIFTH
                     )
                     Icon(
                         imageVector = Icons.Default.Person,
