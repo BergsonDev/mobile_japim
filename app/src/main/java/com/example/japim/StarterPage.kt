@@ -30,9 +30,10 @@ import com.example.japim.ui.components.cards.GenerateCard
 import com.example.japim.ui.components.search.GenerateSearchBar
 
 @Composable
-private fun viewStarterPage(
+private fun ViewStarterPage(
     modifier: Modifier = Modifier,
-    eventRemote: EventRemoteDataSource? = null
+    eventRemote: EventRemoteDataSource? = null,
+    onNavigateToDetails: (String) -> Unit = {}
 ){
     Column(
         modifier = modifier
@@ -61,7 +62,7 @@ private fun viewStarterPage(
                     10,
                     event.is_payment,
                     {
-                        println("fala")
+                        onNavigateToDetails(event.id)
                     }
                 )
             }
@@ -73,9 +74,11 @@ private fun viewStarterPage(
 
 @Preview(showBackground = true)
 @Composable
-fun starterPage(){
+fun StarterPage(
+    onNavigateToCadastro: () -> Unit = {},
+    onNavigateToDetails: (String) -> Unit = {}
+){
     val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
-
     GenerateHeader(
         contentPage = { paddingResponse ->
             Column(
@@ -83,7 +86,10 @@ fun starterPage(){
                     .fillMaxSize()
                     .padding(paddingResponse) // O padding do header entra aqui
             ) {
-                viewStarterPage(eventRemote =  eventRemoteDataSource)
+                ViewStarterPage(
+                    eventRemote = eventRemoteDataSource,
+                    onNavigateToDetails = onNavigateToDetails
+                )
             }
         }
     );
