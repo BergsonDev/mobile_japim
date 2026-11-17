@@ -2,9 +2,9 @@ package com.example.japim.apolloClient
 
 import com.apollographql.apollo.ApolloClient
 import com.example.japim.interceptor.AuthorizationInterceptor
-
+import com.example.japim.BuildConfig
 val apolloClient = ApolloClient.Builder()
-    .serverUrl("http://192.168.1.8:8080/graphql")
+    .serverUrl(BuildConfig.GRAPHQL_SERVER_URL)
     .addInterceptor(AuthorizationInterceptor(
         tokenProvider = {
             """

@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.apollographql.apollo") version "5.2.0"
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
+val serverUrl = localProperties.getProperty("GRAPHQL_SERVER_URL") ?: "http://10.0.2.2:8080/graphql"
 
 android {
     namespace = "com.example.japim"
@@ -18,6 +29,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GRAPHQL_SERVER_URL", "\"$serverUrl\"")
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true // Habilita a geração da classe BuildConfig
     }
 
     buildTypes {
