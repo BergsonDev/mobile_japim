@@ -22,4 +22,19 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
         null
     }
     }
+
+    suspend fun fetchEventById(id : String) : GetEventByIdQuery.Event? {
+        return try {
+            val response = apolloClient.query(GetEventByIdQuery(id)).execute();
+
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            }
+
+            response.data?.event
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
 }

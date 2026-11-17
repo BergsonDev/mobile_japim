@@ -67,4 +67,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("com.apollographql.apollo:apollo-runtime:5.2.0")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
 }
