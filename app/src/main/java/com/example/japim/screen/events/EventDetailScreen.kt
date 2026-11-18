@@ -24,14 +24,6 @@ fun EventDetailScreen(event_id : String){
 
     val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
     val coroutineScope = rememberCoroutineScope()
-    GenerateHeader(
-        contentPage = { paddingResponse ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingResponse)
-            ) {
-
                 var event by remember { mutableStateOf<GetEventByIdQuery.Event?>(null) }
                 LaunchedEffect(Unit) {
                     event = eventRemoteDataSource.fetchEventById(event_id);
@@ -70,8 +62,4 @@ fun EventDetailScreen(event_id : String){
                         }
                     )
                 }
-
-            }
-        }
-    );
 }

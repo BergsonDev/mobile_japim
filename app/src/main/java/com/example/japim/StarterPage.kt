@@ -76,21 +76,13 @@ private fun ViewStarterPage(
 @Composable
 fun StarterPage(
     onNavigateToCadastro: () -> Unit = {},
-    onNavigateToDetails: (String) -> Unit = {}
+    onNavigateToDetails: (String) -> Unit = {},
+    onNavigateToEvents : () -> Unit = {}
 ){
     val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
-    GenerateHeader(
-        contentPage = { paddingResponse ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingResponse) // O padding do header entra aqui
-            ) {
-                ViewStarterPage(
-                    eventRemote = eventRemoteDataSource,
-                    onNavigateToDetails = onNavigateToDetails
-                )
-            }
-        }
-    );
+
+    ViewStarterPage(
+        eventRemote = eventRemoteDataSource,
+        onNavigateToDetails = onNavigateToDetails
+    )
 }

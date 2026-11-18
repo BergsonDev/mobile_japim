@@ -105,19 +105,21 @@ private fun GenerateCardEvent(
             }
 
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
+            if(value != 0.0){
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
 
-            ) {
+                ) {
 
-                Icon(
-                    imageVector = Icons.Default.Paid,
-                    contentDescription = "Valor",
-                    tint = PRIMARY
-                )
+                    Icon(
+                        imageVector = Icons.Default.Paid,
+                        contentDescription = "Valor",
+                        tint = PRIMARY
+                    )
 
-                Text("Valor", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
-                Text("R$ ${value.parseReal()}", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
+                    Text("Valor", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
+                    Text("R$ ${value.parseReal()}", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
+                }
             }
         }
 

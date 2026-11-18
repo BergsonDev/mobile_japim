@@ -2,6 +2,7 @@ package com.example.japim.remoteDataSource
 
 import android.util.Log
 import com.apollographql.apollo.ApolloClient
+import com.example.japim.graphql.DeleteEventMutation
 import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.graphql.SubscribeParticipantMutation
@@ -70,5 +71,20 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             null
         }
 
+    }
+
+    suspend fun deleteEvent(event_id : String) : DeleteEventMutation.DeleteEvent ? {
+        return try {
+            val response = apolloClient.mutation(DeleteEventMutation(event_id)).execute();
+
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            }
+
+            response.data?.deleteEvent
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
     }
 }

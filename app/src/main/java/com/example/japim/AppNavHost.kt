@@ -1,14 +1,31 @@
 package com.example.japim
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import com.example.japim.navigation.Screen
 import com.example.japim.screen.events.EventDetailScreen
+import com.example.japim.screen.events.EventListScreen
+import com.example.japim.ui.components.GenerateHeader
 
+@Composable
+private fun ContentPage(navController : NavController, content : @Composable () -> Unit){
+    GenerateHeader(
+        onNavigateToEvents = {navController.navigate(Screen.Events.route)},
+        contentPage = { paddingInterno ->
+            Box(modifier = Modifier.padding(paddingInterno)) {
+                content()
+            }
+        }
+    );
+}
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
@@ -19,14 +36,18 @@ fun AppNavHost() {
     ) {
 
         composable(Screen.Home.route) {
-            StarterPage(
-                onNavigateToCadastro = {
-                    navController.navigate(Screen.RegisterAccount.route)
-                },
-                onNavigateToDetails = { eventId ->
-                    navController.navigate(Screen.EventDetails.createRoute(eventId))
-                }
-            )
+            ContentPage(
+                navController,
+                {
+                StarterPage(
+                    onNavigateToCadastro = {
+                        navController.navigate(Screen.RegisterAccount.route)
+                    },
+                    onNavigateToDetails = { eventId ->
+                        navController.navigate(Screen.EventDetails.createRoute(eventId))
+                    }
+                )
+            })
         }
 
         composable(Screen.RegisterAccount.route) {
@@ -39,8 +60,20 @@ fun AppNavHost() {
         ) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString("event_id")
             if(eventId != null){
-                EventDetailScreen(eventId)
+                ContentPage(
+                    navController,
+                    {
+                    EventDetailScreen(eventId)
+                })
             }
+        }
+
+        composable(Screen.Events.route) {
+            ContentPage(
+                navController,
+                {
+                EventListScreen()
+            })
         }
     }
 }
