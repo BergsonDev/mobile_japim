@@ -15,20 +15,23 @@ import com.example.japim.ui.events.GenerateEventDetails
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun EventDetailScreen(event_id : String){
 
     val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
+    val coroutineScope = rememberCoroutineScope()
     GenerateHeader(
         contentPage = { paddingResponse ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingResponse) // O padding do header entra aqui
+                    .padding(paddingResponse)
             ) {
 
-                val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
                 var event by remember { mutableStateOf<GetEventByIdQuery.Event?>(null) }
                 LaunchedEffect(Unit) {
                     event = eventRemoteDataSource.fetchEventById(event_id);
@@ -45,8 +48,26 @@ fun EventDetailScreen(event_id : String){
                         max_volunteers = it.max_volunteers,
                         workload = it.workload,
                         value = it.value,
-                        onClickParticipant = {},
-                        onClickVolunteer = {}
+                        onClickParticipant = {
+                            coroutineScope.launch {
+                                val result = eventRemoteDataSource.subscribeParticipant(event_id)
+                                if (result != null) {
+                                    Log.d("Subscribe", "Inscrição realizada com sucesso: ${result.id}")
+                                } else {
+                                    Log.e("Subscribe", "Falha ao se inscrever")
+                                }
+                            }
+                        },
+                        onClickVolunteer = {
+                            coroutineScope.launch {
+                                val result = eventRemoteDataSource.subscribeVolunteer(event_id)
+                                if(result != null){
+                                    Log.d("Subscribe", "Inscrição realizada como voluntário realizado com sucesso: ${result.id}")
+                                } else {
+                                    Log.e("Subscribe", "Falha ao se inscrever")
+                                }
+                            }
+                        }
                     )
                 }
 
