@@ -26,54 +26,94 @@ private fun ContentPage(navController : NavController, content : @Composable () 
         }
     );
 }
+
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = "login"
     ) {
 
+        // Tela de Login
+        composable("login") {
+            Login(
+                onCriarConta = {
+                    navController.navigate(Screen.RegisterAccount.route)
+                },
+                onLoginSucesso = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        // Tela inicial do aplicativo
         composable(Screen.Home.route) {
             ContentPage(
                 navController,
                 {
-                StarterPage(
-                    onNavigateToCadastro = {
-                        navController.navigate(Screen.RegisterAccount.route)
-                    },
-                    onNavigateToDetails = { eventId ->
-                        navController.navigate(Screen.EventDetails.createRoute(eventId))
-                    }
-                )
-            })
+                    StarterPage(
+                        onNavigateToCadastro = {
+                            navController.navigate(
+                                Screen.RegisterAccount.route
+                            )
+                        },
+                        onNavigateToDetails = { eventId ->
+                            navController.navigate(
+                                Screen.EventDetails.createRoute(eventId)
+                            )
+                        }
+                    )
+                }
+            )
         }
 
+        // Tela de Cadastro
         composable(Screen.RegisterAccount.route) {
-            Cadastro()
+            Cadastro(
+                onVoltarLogin = {
+                    navController.popBackStack("login", false)
+                }
+            )
         }
 
+        // Detalhes de um evento
         composable(
             route = Screen.EventDetails.route,
-            arguments = listOf(navArgument("event_id") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("event_id") {
+                    type = NavType.StringType
+                }
+            )
         ) { backStackEntry ->
-            val eventId = backStackEntry.arguments?.getString("event_id")
-            if(eventId != null){
+
+            val eventId =
+                backStackEntry.arguments?.getString("event_id")
+
+            if (eventId != null) {
                 ContentPage(
                     navController,
                     {
-                    EventDetailScreen(eventId)
-                })
+                        EventDetailScreen(eventId)
+                    }
+                )
             }
         }
 
+        // Lista de eventos
         composable(Screen.Events.route) {
             ContentPage(
                 navController,
                 {
-                EventListScreen()
-            })
+                    EventListScreen()
+                }
+            )
         }
     }
 }
