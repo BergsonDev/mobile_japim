@@ -46,6 +46,7 @@ import com.example.japim.ui.theme.THIRD
 @Composable
 fun GenerateHeader(
     onNavigateToEvents : ()-> Unit,
+    onNavigateToAdmin: () -> Unit = {},
     contentPage : @Composable (PaddingValues)  -> Unit
 ){
     Scaffold(
@@ -99,7 +100,8 @@ fun GenerateHeader(
 
                     GenerateMenu { closeMenu ->
                         GenerateContentMenu(
-                            onNavigateToEvents
+                            onNavigateToEvents = onNavigateToEvents,
+                            onNavigateToAdmin = onNavigateToAdmin
                         );
                     }
                 }

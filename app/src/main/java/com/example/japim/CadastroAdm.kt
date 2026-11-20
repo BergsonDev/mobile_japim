@@ -19,11 +19,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.japim.ui.theme.*
+import com.example.japim.apolloClient.TokenManager
+import com.example.japim.apolloClient.generateApolloClient
+import com.example.japim.graphql.CreateUserMutation
+import com.example.japim.graphql.type.UserInputCreate
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun CadastroAdm(
     modifier: Modifier = Modifier,
-    onVoltar: () -> Unit = {}
+    onVoltar: () -> Unit = {},
+    tokenProvider: TokenManager
 ) {
     var nome by remember { mutableStateOf("") }
     var sobrenome by remember { mutableStateOf("") }
@@ -34,6 +41,10 @@ fun CadastroAdm(
     var alunoFucapi by remember { mutableStateOf(false) }
 
     var mensagemErro by remember { mutableStateOf<String?>(null) }
+    var mensagemSucesso by remember { mutableStateOf<String?>(null) }
+    var carregando by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = modifier
@@ -156,7 +167,23 @@ fun CadastroAdm(
             Spacer(modifier = Modifier.height(10.dp))
         }
 
+
+        mensagemSucesso?.let {
+            Text(
+                text = it,
+                color = SUCCESS,
+                fontFamily = MPlus2,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+
         Button(
+
             onClick = {
                 mensagemErro = when {
                     nome.isBlank() ||
@@ -176,10 +203,62 @@ fun CadastroAdm(
                     alunoFucapi && ra.isBlank() ->
                         "Informe o RA."
 
-                    else ->
-                        "Interface pronta. O cadastro será conectado à API posteriormente."
+                    else -> null
+                }
+
+                if (mensagemErro == null && !carregando) {
+                    carregando = true
+                    mensagemSucesso = null
+
+                    coroutineScope.launch {
+                        try {
+                            val response = generateApolloClient(tokenProvider)
+                                .mutation(
+                                    CreateUserMutation(
+                                        input = UserInputCreate(
+                                            name = "${nome.trim()} ${sobrenome.trim()}",
+                                            email = email.trim(),
+                                            password = senha,
+                                            cpf = cpf,
+                                            ra = if (alunoFucapi) ra.trim() else ""
+                                        )
+                                    )
+                                ).execute()
+
+                            when {
+                                response.exception != null -> {
+                                    mensagemErro = "Não foi possível conectar à API."
+                                }
+
+                                !response.errors.isNullOrEmpty() -> {
+                                    mensagemErro = response.errors!!.first().message
+                                }
+
+                                response.data?.createUser != null -> {
+                                    mensagemSucesso = "Usuário cadastrado com sucesso!"
+
+                                    nome = ""
+                                    sobrenome = ""
+                                    cpf = ""
+                                    email = ""
+                                    senha = ""
+                                    ra = ""
+                                    alunoFucapi = false
+                                }
+
+                                else -> {
+                                    mensagemErro = "Não foi possível concluir o cadastro."
+                                }
+                            }
+                        } catch (e: Exception) {
+                            mensagemErro = "Falha ao cadastrar usuário: ${e.message}"
+                        } finally {
+                            carregando = false
+                        }
+                    }
                 }
             },
+
             modifier = Modifier
                 .fillMaxWidth()
                 .height(40.dp),
@@ -189,7 +268,7 @@ fun CadastroAdm(
             )
         ) {
             Text(
-                text = "Cadastrar Usuário",
+                text = if (carregando) "Cadastrando..." else "Cadastrar ADM",
                 color = FOURTH,
                 fontFamily = MPlus2,
                 fontWeight = FontWeight.Bold
@@ -208,6 +287,7 @@ fun CadastroAdm(
                 ra = ""
                 alunoFucapi = false
                 mensagemErro = null
+                mensagemSucesso = null
             },
             modifier = Modifier
                 .fillMaxWidth()

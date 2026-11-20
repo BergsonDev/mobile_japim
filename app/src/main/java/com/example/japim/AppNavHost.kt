@@ -19,7 +19,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
-import com.example.japim.apolloClient.apolloClient
 import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
@@ -31,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import com.example.japim.toEventInputUpdate
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.japim.apolloClient.TokenManager
+import com.example.japim.apolloClient.generateApolloClient
 
 
 @Composable
@@ -42,6 +43,9 @@ private fun ContentPage(
         onNavigateToEvents = {
             navController.navigate(Screen.Events.route)
         },
+        onNavigateToAdmin = {
+            navController.navigate("pagina_admin")
+        },
         contentPage = { paddingInterno ->
             Box(
                 modifier = Modifier.padding(paddingInterno)
@@ -52,15 +56,22 @@ private fun ContentPage(
     )
 }
 
+
 @Composable
-fun AppNavHost() {
+fun AppNavHost(tokenProvider: TokenManager) {
 
     val navController = rememberNavController()
 
-    // Reutiliza o Apollo Client já configurado no Japim
-    val eventRemoteDataSource = remember {
+    // Cria o Apollo Client utilizando o TokenManager
+    val apolloClient = remember(tokenProvider) {
+        generateApolloClient(tokenProvider)
+    }
+
+    // Reutiliza o Apollo Client para gerenciar os eventos
+    val eventRemoteDataSource = remember(apolloClient) {
         EventRemoteDataSource(apolloClient)
     }
+
 
     NavHost(
         navController = navController,
@@ -70,6 +81,7 @@ fun AppNavHost() {
         // LOGIN
         composable("login") {
             Login(
+                tokenProvider = tokenProvider,
                 onCriarConta = {
                     navController.navigate(
                         Screen.RegisterAccount.route
@@ -90,6 +102,7 @@ fun AppNavHost() {
         composable(Screen.Home.route) {
             ContentPage(navController) {
                 StarterPage(
+                    tokenProvider = tokenProvider,
                     onNavigateToCadastro = {
                         navController.navigate(
                             Screen.RegisterAccount.route
@@ -107,6 +120,7 @@ fun AppNavHost() {
         // CADASTRO
         composable(Screen.RegisterAccount.route) {
             Cadastro(
+                tokenProvider = tokenProvider,
                 onVoltarLogin = {
                     navController.popBackStack("login", false)
                 }
@@ -128,7 +142,9 @@ fun AppNavHost() {
 
             if (eventId != null) {
                 ContentPage(navController) {
-                    EventDetailScreen(eventId)
+                    EventDetailScreen(
+                        tokenProvider = tokenProvider,
+                        event_id = eventId)
                 }
             }
         }
@@ -287,6 +303,32 @@ fun AppNavHost() {
                     }
                 }
             }
+        }
+    ////PAGINA ADM
+        composable("pagina_admin") {
+            PaginaAdmin(
+                onGerenciarUsuarios = {
+                    // Implementaremos posteriormente
+                },
+                onCadastrarUsuario = {
+                    navController.navigate("cadastro_adm")
+                },
+                onGerenciarEventos = {
+                    // Implementaremos posteriormente
+                },
+                onVoltar = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    ////CADASTRO ADM
+        composable("cadastro_adm") {
+            CadastroAdm(
+                onVoltar = {
+                    navController.popBackStack()
+                },
+                tokenProvider = tokenProvider
+            )
         }
     }
 }
