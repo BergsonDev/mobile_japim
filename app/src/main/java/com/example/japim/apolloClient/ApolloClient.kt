@@ -1,13 +1,16 @@
+
 package com.example.japim.apolloClient
 
 import com.apollographql.apollo.ApolloClient
 import com.example.japim.interceptor.AuthorizationInterceptor
-import com.example.japim.BuildConfig
-val apolloClient = ApolloClient.Builder()
-    .serverUrl(BuildConfig.GRAPHQL_SERVER_URL)
-    .addInterceptor(AuthorizationInterceptor(
-        tokenProvider = {
-            """eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBqYXBpbS5jb20iLCJyb2xlcyI6ImV2ZW50cy1jb25maXJtLXByZXNlbmNlLHVzZXJzLWRlbGV0ZSxwZXJtaXNzaW9ucy1jcmVhdGUscm9sZXMtZGVsZXRlLHJvbGVzLWNyZWF0ZSxwZXJtaXNzaW9ucy1kZWxldGUscGVybWlzc2lvbnMtdmlldyxldmVudHMtdW5zdWJzY3JpYmUtcGFydGljaXBhbnQsdXNlcnMtcmVhZCxyb2xlcy11cGRhdGUscm9sZXMtdmlldyxldmVudHMtdmlldyx1c2Vycy11cGRhdGUscGVybWlzc2lvbnMtcmVhZCxldmVudHMtY29uZmlybS1wcmVzZW5jZS12b2x1bnRlZXJzLGV2ZW50cy11bnN1YnNjcmliZS12b2x1bnRlZXIsZXZlbnRzLXN1YnNjcmliZS1wYXJ0aWNpcGFudCxldmVudHMtc3Vic2NyaWJlLXZvbHVudGVlcixldmVudHMtZGVsZXRlLHJvbGVzLXJlYWQsdXNlcnMtY3JlYXRlLGV2ZW50cy1yZWFkLGV2ZW50cy11cGRhdGUsdXNlcnMtdmlldyxldmVudHMtY3JlYXRlLHBlcm1pc3Npb25zLXVwZGF0ZSxldmVudHMtY29uZmlybSIsImlhdCI6MTc5NDk3NTA2NywiZXhwIjoxNzk1MDYxNDY3fQ.swYiK0l1qpDeWLu9IxdBNSZgGbwTV1GqXMxeAXpg7f8""".trimIndent()
-        }
-    ))
-    .build()
+
+val apolloClient: ApolloClient by lazy {
+    ApolloClient.Builder()
+        .serverUrl("http://192.168.80.1:8081/graphql")
+        .addInterceptor(
+            AuthorizationInterceptor(
+                tokenProvider = { TokenManager.token }
+            )
+        )
+        .build()
+}

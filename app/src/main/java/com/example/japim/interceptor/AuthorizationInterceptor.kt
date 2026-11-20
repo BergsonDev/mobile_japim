@@ -7,12 +7,15 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import kotlinx.coroutines.flow.Flow
 
-class AuthorizationInterceptor(private val tokenProvider: () -> String?) : ApolloInterceptor {
+class AuthorizationInterceptor(
+    private val tokenProvider: () -> String?
+) : ApolloInterceptor {
 
     override fun <D : Operation.Data> intercept(
         request: ApolloRequest<D>,
         chain: ApolloInterceptorChain
     ): Flow<ApolloResponse<D>> {
+
         val token = tokenProvider()
 
         val modifiedRequest = if (!token.isNullOrBlank()) {
