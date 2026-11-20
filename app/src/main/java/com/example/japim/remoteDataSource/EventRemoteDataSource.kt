@@ -7,6 +7,10 @@ import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.graphql.SubscribeParticipantMutation
 import com.example.japim.graphql.SubscribeVolunteerMutation
+import com.example.japim.graphql.events.mutation.CreateEventMutation
+import com.example.japim.graphql.UpdateEventMutation
+import com.example.japim.graphql.type.EventInputCreate
+import com.example.japim.graphql.type.EventInputUpdate
 
 class EventRemoteDataSource(private val apolloClient: ApolloClient) {
     suspend fun fetchEvents(): List<GetEventsQuery.Event?>? {    return try {

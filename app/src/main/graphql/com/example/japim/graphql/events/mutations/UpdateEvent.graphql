@@ -1,0 +1,17 @@
+mutation UpdateEvent($input: EventInputUpdate) {
+    updateEvent(input: $input) {
+        id
+        name
+        short_description
+        description
+        is_payment
+        value
+        max_participants
+        max_volunteers
+        date_start
+        hour_start
+        date_end
+        hour_end
+        workload
+    }
+}
