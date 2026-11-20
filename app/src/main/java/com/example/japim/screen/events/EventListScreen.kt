@@ -31,12 +31,15 @@ import com.example.japim.ui.components.search.GenerateSearchBar
 import com.example.japim.ui.theme.SECONDARY
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.example.japim.apolloClient.TokenManager
+import com.example.japim.apolloClient.generateApolloClient
 
 
 @Composable
 fun EventListScreen(
+    tokenProvider: TokenManager
 ){
-    val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
+    val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
     val coroutineScope = rememberCoroutineScope()
 
     var events by remember {
