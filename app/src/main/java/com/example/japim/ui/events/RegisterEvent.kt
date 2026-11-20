@@ -298,7 +298,7 @@ fun RegisterEvent(
         EventInput(
             value = palestrantes,
             onValueChange = { palestrantes = it },
-            placeholder = "Selecione os Palestrantes"
+            placeholder = "Nome do Palestrantes"
         )
 
         Spacer(Modifier.height(12.dp))

@@ -136,9 +136,17 @@ fun AppNavHost() {
         // LISTA DE EVENTOS
         composable(Screen.Events.route) {
             ContentPage(navController) {
-                EventListScreen()
+                EventListScreen(
+                    onClickRegister = {
+                        navController.navigate("register_event")
+                    },
+                    onClickUpdate = { eventId ->
+                        navController.navigate("register_event/$eventId")
+                    }
+                )
             }
         }
+
 
 // CRIAÇÃO DE EVENTO
         composable(route = "register_event") {
