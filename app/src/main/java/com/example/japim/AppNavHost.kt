@@ -25,6 +25,13 @@ import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListScreen
 import com.example.japim.ui.components.GenerateHeader
+import android.widget.Toast
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import com.example.japim.toEventInputUpdate
+import androidx.compose.runtime.rememberCoroutineScope
+
 
 @Composable
 private fun ContentPage(
@@ -133,17 +140,49 @@ fun AppNavHost() {
             }
         }
 
-        // CRIAÇÃO DE EVENTO
-        composable("register_event") {
-            ContentPage(navController) {
-                RegisterEvent(
-                    onVoltar = {
-                        navController.popBackStack()
-                    },
-                    onSalvar = { dados ->
-                        // TODO: integrar mutation de criação
-                    }
-                )
+// CRIAÇÃO DE EVENTO
+        composable(route = "register_event") {
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+
+                ContentPage(navController) {
+                    RegisterEvent(
+                        onVoltar = {
+                            navController.popBackStack()
+                        },
+                        onSalvar = { dados ->
+                            scope.launch {
+                                try {
+                                    val input = dados.toEventInputCreate()
+
+                                    val eventoCriado =
+                                        eventRemoteDataSource.createEvent(input)
+
+                                    if (eventoCriado != null) {
+                                        Toast.makeText(
+                                            context,
+                                            "Evento criado com sucesso!",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+
+                                        navController.popBackStack()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Não foi possível criar o evento. Verifique os dados e tente novamente.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        "Erro ao criar evento: ${e.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    )
             }
         }
 
@@ -159,6 +198,8 @@ fun AppNavHost() {
 
             val eventId = backStackEntry.arguments
                 ?.getString("event_id")
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
 
             if (eventId != null) {
 
@@ -195,7 +236,37 @@ fun AppNavHost() {
                                     navController.popBackStack()
                                 },
                                 onSalvar = { dados ->
-                                    // TODO: integrar mutation de atualização
+                                    scope.launch {
+                                        try {
+                                            val input = dados.toEventInputUpdate(eventId)
+
+                                            val eventoAtualizado =
+                                                eventRemoteDataSource.updateEvent(input)
+
+                                            if (eventoAtualizado != null) {
+                                                Toast.makeText(
+                                                    context,
+                                                    "Evento atualizado com sucesso!",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+
+                                                navController.popBackStack()
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    "Não foi possível atualizar o evento.",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+
+                                        } catch (e: Exception) {
+                                            Toast.makeText(
+                                                context,
+                                                "Erro ao atualizar evento: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
                                 }
                             )
                         }

@@ -28,6 +28,13 @@ import androidx.compose.ui.unit.sp
 import java.util.Calendar
 import com.example.japim.graphql.GetEventByIdQuery
 import androidx.compose.runtime.saveable.rememberSaveable
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import com.example.japim.graphql.type.EventInputCreate
+import com.example.japim.graphql.type.EventInputUpdate
+
 
 private val EventYellow = Color(0xFFFFE500)
 private val EventBlack = Color.Black
@@ -48,28 +55,68 @@ data class EventFormData(
     val valorFinanceiro: String = "",
     val possuiPagamento: Boolean = false,
     val cargaHoraria: String = "",
+    val palestrantesIds: List<String> = emptyList()
 
 )
 
 
+private fun formatarDataEvento(
+    data: String?,
+    hora: String?
+): String {
+    if (data.isNullOrBlank() || hora.isNullOrBlank()) {
+        return ""
+    }
+
+    return try {
+        val dataConvertida = LocalDate.parse(data)
+        val horaConvertida = LocalTime.parse(hora)
+
+        val dataHora = LocalDateTime.of(
+            dataConvertida,
+            horaConvertida
+        )
+
+        dataHora.format(
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+        )
+    } catch (e: Exception) {
+        ""
+    }
+}
+private val formatoDataEvento =
+    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+
+fun converterDataEvento(valor: String): LocalDateTime? {
+    return try {
+        LocalDateTime.parse(valor, formatoDataEvento)
+    } catch (e: Exception) {
+        null
+    }
+}
 
 fun GetEventByIdQuery.Event.toEventFormData(): EventFormData {
     return EventFormData(
         nome = name.orEmpty(),
-        inicio = listOfNotNull(
+        inicio = formatarDataEvento(
             date_start?.toString(),
             hour_start?.toString()
-        ).joinToString(" "),
-        fim = listOfNotNull(
+        ),
+
+        fim = formatarDataEvento(
             date_end?.toString(),
             hour_end?.toString()
-        ).joinToString(" "),
+        ),
         conteudo = short_description.orEmpty(),
         descricao = description.orEmpty(),
         palestrantes = speakers
             ?.filterNotNull()
             ?.mapNotNull { it.name }
             ?.joinToString(", ")
+            .orEmpty(),
+        palestrantesIds = speakers
+            ?.filterNotNull()
+            ?.mapNotNull { it.id }
             .orEmpty(),
         participantes = max_participants?.toString().orEmpty(),
         voluntarios = max_volunteers?.toString().orEmpty(),
@@ -80,6 +127,63 @@ fun GetEventByIdQuery.Event.toEventFormData(): EventFormData {
     )
 }
 
+fun EventFormData.toEventInputCreate(): EventInputCreate {
+    val dataInicio = requireNotNull(converterDataEvento(inicio)) {
+        "Data de início inválida"
+    }
+
+    val dataFim = requireNotNull(converterDataEvento(fim)) {
+        "Data de término inválida"
+    }
+
+    require(dataFim.isAfter(dataInicio)) {
+        "A data de término deve ser posterior ao início"
+    }
+
+    return EventInputCreate(
+        name = nome.trim(),
+        short_description = conteudo.trim(),
+        description = descricao.trim(),
+        is_payment = possuiPagamento,
+        value = if (possuiPagamento) {
+            valorFinanceiro.replace(",", ".").toDouble()
+        } else {
+            0.0
+        },
+        max_participants = participantes.toInt(),
+        max_volunteers = voluntarios.toInt(),
+        date_start = dataInicio.toLocalDate(),
+        hour_start = dataInicio.toLocalTime(),
+        date_end = dataFim.toLocalDate(),
+        hour_end = dataFim.toLocalTime(),
+        workload = cargaHoraria.toInt(),
+        speakers_id = palestrantesIds
+    )
+}
+
+fun EventFormData.toEventInputUpdate(
+    eventId: String
+): EventInputUpdate {
+
+    val dados = toEventInputCreate()
+
+    return EventInputUpdate(
+        id = eventId,
+        name = dados.name,
+        short_description = dados.short_description,
+        description = dados.description,
+        is_payment = dados.is_payment,
+        value = dados.value,
+        max_participants = dados.max_participants,
+        max_volunteers = dados.max_volunteers,
+        date_start = dados.date_start,
+        hour_start = dados.hour_start,
+        date_end = dados.date_end,
+        hour_end = dados.hour_end,
+        workload = dados.workload,
+        speakers_id = dados.speakers_id
+    )
+}
 
 @Composable
 fun RegisterEvent(
@@ -253,12 +357,45 @@ fun RegisterEvent(
 
         Spacer(Modifier.height(12.dp))
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = possuiPagamento,
+                onCheckedChange = { marcado ->
+                    possuiPagamento = marcado
+
+                    if (!marcado) {
+                        valorFinanceiro = ""
+                    }
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = EventYellow,
+                    uncheckedColor = EventWhite,
+                    checkmarkColor = EventBlack
+                )
+            )
+
+            Text(
+                text = "Este evento é pago?",
+                color = EventWhite,
+                fontSize = 14.sp
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.weight(1f)) {
                 EventInput(
                     value = valorFinanceiro,
-                    onValueChange = { valorFinanceiro = it },
-                    placeholder = "Valor Financeiro",
+                    onValueChange = {
+                        if (possuiPagamento) {
+                            valorFinanceiro = it
+                        }
+                    },
+                    placeholder = if (possuiPagamento) "Valor Financeiro" else "Gratuito",
                     keyboardType = KeyboardType.Decimal
                 )
             }
@@ -303,34 +440,86 @@ fun RegisterEvent(
 
             Button(
                 onClick = {
-                    if (nome.isBlank() ||
-                        inicio.isBlank() ||
-                        fim.isBlank() ||
-                        descricao.isBlank()
-                    ) {
-                        Toast.makeText(
-                            context,
-                            "Preencha os campos obrigatórios",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        onSalvar(
-                        EventFormData(
-                            nome = nome,
-                            inicio = inicio,
-                            fim = fim,
-                            conteudo = conteudo,
-                            descricao = descricao,
-                            palestrantes = palestrantes,
-                            participantes = participantes,
-                            voluntarios = voluntarios,
-                            imagemUri = imagemUri,
-                            imagemExistente = imagemExistente,
-                            valorFinanceiro = valorFinanceiro,
-                            possuiPagamento = possuiPagamento,
-                            cargaHoraria = cargaHoraria
-                        )
-                    )
+                    val dataInicio = converterDataEvento(inicio)
+                    val dataFim = converterDataEvento(fim)
+
+                    when {
+                        nome.isBlank() ||
+                                conteudo.isBlank() ||
+                                descricao.isBlank() -> {
+                            Toast.makeText(
+                                context,
+                                "Preencha os campos obrigatórios",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        dataInicio == null || dataFim == null -> {
+                            Toast.makeText(
+                                context,
+                                "Informe datas e horários válidos",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        !dataFim.isAfter(dataInicio) -> {
+                            Toast.makeText(
+                                context,
+                                "O término deve ser posterior ao início",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                        participantes.toIntOrNull() == null ||
+                                voluntarios.toIntOrNull() == null ||
+                                cargaHoraria.toIntOrNull() == null -> {
+                            Toast.makeText(
+                                context,
+                                "Informe participantes, voluntários e carga horária válidos",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                        participantes.toInt() < 0 ||
+                                voluntarios.toInt() < 0 ||
+                                cargaHoraria.toInt() <= 0 -> {
+                            Toast.makeText(
+                                context,
+                                "As quantidades devem ser positivas e a carga horária maior que zero",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                        possuiPagamento &&
+                                (valorFinanceiro.replace(",", ".").toFloatOrNull() == null ||
+                                        valorFinanceiro.replace(",", ".").toFloatOrNull()!! <= 0f) -> {
+                            Toast.makeText(
+                                context,
+                                "Informe um valor financeiro válido",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                        else -> {
+                            onSalvar(
+                                EventFormData(
+                                    nome = nome,
+                                    inicio = inicio,
+                                    fim = fim,
+                                    conteudo = conteudo,
+                                    descricao = descricao,
+                                    palestrantes = palestrantes,
+                                    participantes = participantes,
+                                    voluntarios = voluntarios,
+                                    imagemUri = imagemUri,
+                                    imagemExistente = imagemExistente,
+                                    valorFinanceiro = valorFinanceiro,
+                                    possuiPagamento = possuiPagamento,
+                                    cargaHoraria = cargaHoraria,
+                                    palestrantesIds = dadosIniciais?.palestrantesIds.orEmpty()
+                                )
+                            )
+                        }
                     }
                 },
                 modifier = Modifier.weight(1f),

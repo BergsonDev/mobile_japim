@@ -7,10 +7,12 @@ import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.graphql.SubscribeParticipantMutation
 import com.example.japim.graphql.SubscribeVolunteerMutation
-import com.example.japim.graphql.events.mutation.CreateEventMutation
+import com.example.japim.graphql.CreateEventMutation
 import com.example.japim.graphql.UpdateEventMutation
 import com.example.japim.graphql.type.EventInputCreate
 import com.example.japim.graphql.type.EventInputUpdate
+import com.apollographql.apollo.api.Optional
+
 
 class EventRemoteDataSource(private val apolloClient: ApolloClient) {
     suspend fun fetchEvents(): List<GetEventsQuery.Event?>? {    return try {
@@ -88,6 +90,79 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             response.data?.deleteEvent
         } catch (e: Exception) {
             Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
+
+    suspend fun createEvent(
+        input: EventInputCreate
+    ): CreateEventMutation.CreateEvent? {
+        return try {
+            val response = apolloClient
+                .mutation(
+                    CreateEventMutation(
+                        input = Optional.Present(input)
+                    )
+                )
+                .execute()
+
+            if (response.hasErrors()) {
+                Log.e(
+                    "APOLLO_EVENT",
+                    "Erro ao criar evento: ${response.errors}"
+                )
+                null
+            } else {
+                Log.d(
+                    "APOLLO_EVENT",
+                    "Evento criado: ${response.data?.createEvent?.id}"
+                )
+
+                response.data?.createEvent
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "APOLLO_EVENT",
+                "Falha ao criar evento",
+                e
+            )
+            null
+        }
+    }
+    suspend fun updateEvent(
+        input: EventInputUpdate
+    ): UpdateEventMutation.UpdateEvent? {
+
+        return try {
+            val response = apolloClient
+                .mutation(
+                    UpdateEventMutation(
+                        input = Optional.Present(input)
+                    )
+                )
+                .execute()
+
+            if (response.hasErrors()) {
+                Log.e(
+                    "APOLLO_EVENT",
+                    "Erro ao atualizar evento: ${response.errors}"
+                )
+                null
+            } else {
+                Log.d(
+                    "APOLLO_EVENT",
+                    "Evento atualizado com sucesso"
+                )
+
+                response.data?.updateEvent
+            }
+
+        } catch (e: Exception) {
+            Log.e(
+                "APOLLO_EVENT",
+                "Falha ao atualizar evento",
+                e
+            )
             null
         }
     }
