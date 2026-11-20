@@ -9,11 +9,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.example.japim.graphql.AuthQuery
 import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.AuthRemoteDataSource
@@ -24,6 +29,8 @@ import com.example.japim.ui.components.GenerateHeader
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.example.japim.apolloClient.TokenManager
+import com.example.japim.apolloClient.generateApolloClient
+import com.example.japim.ui.theme.PRIMARY
 
 
 @Composable
@@ -41,11 +48,48 @@ private fun ContentPage(navController : NavController, content : @Composable () 
 @Composable
 fun AppNavHost(tokenProvider : TokenManager) {
     val navController = rememberNavController()
+    val coroutineScope = rememberCoroutineScope()
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = "splash"
     ) {
+
+        composable("splash") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = PRIMARY)
+            }
+
+            LaunchedEffect(Unit) {
+                coroutineScope.launch {
+                    val token = tokenProvider.getToken()
+                    if (!token.isNullOrBlank()) {
+                        try {
+                            val client = generateApolloClient(tokenProvider)
+                            val authRemoteDataSource = AuthRemoteDataSource(client)
+                            val me = authRemoteDataSource.auth()
+                            if (me != null) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo("splash") { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                                return@launch
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AppNavHost", "Erro ao validar token", e)
+                        }
+                    }
+                    tokenProvider.limparToken()
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
 
         composable("login") {
             Login(
