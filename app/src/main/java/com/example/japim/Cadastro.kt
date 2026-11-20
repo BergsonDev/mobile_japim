@@ -22,9 +22,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.japim.apolloClient.TokenManager
 
 import com.example.japim.ui.theme.*
-import com.example.japim.apolloClient.apolloClient
+import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.CreateUserMutation
 import com.example.japim.graphql.type.UserInputCreate
 
@@ -33,7 +34,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun Cadastro(
     modifier: Modifier = Modifier,
-    onVoltarLogin: () -> Unit = {}
+    onVoltarLogin: () -> Unit = {},
+    tokenProvider : TokenManager,
 ) {
 
     var nome by remember { mutableStateOf("") }
@@ -224,7 +226,7 @@ fun Cadastro(
 
                         coroutineScope.launch {
                             try {
-                                val response = apolloClient.mutation(
+                                val response = generateApolloClient(tokenProvider).mutation(
                                     CreateUserMutation(
                                         input = UserInputCreate(
                                             name = "${nome.trim()} ${sobrenome.trim()}",
@@ -427,6 +429,6 @@ fun CampoCadastro(
 
 @Preview(showBackground = true)
 @Composable
-private fun CadastroPreview() {
-    Cadastro()
+private fun CadastroPreview(tokenProvider: TokenManager) {
+    Cadastro(tokenProvider=tokenProvider)
 }

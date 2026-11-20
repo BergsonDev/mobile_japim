@@ -1,17 +1,27 @@
 
 package com.example.japim.apolloClient
+import android.content.Context
+import android.util.Log
+import androidx.core.content.edit
 
-object TokenManager {
+private val KEY = "token_access"
+class TokenManager(context: Context){
 
-    @Volatile
-    var token: String? = null
-        private set
+    private val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
-    fun salvarToken(novoToken: String) {
-        token = novoToken
+    fun getToken() : String? {
+       val token = sharedPreferences.getString(KEY, null)
+       Log.d("TokenManager", "getToken: $token")
+       return token
+    }
+
+    fun saveToken(novoToken: String) {
+        Log.d("TokenManager", "saveToken: $novoToken")
+        sharedPreferences.edit(commit = true) { putString(KEY, novoToken) }
     }
 
     fun limparToken() {
-        token = null
+        Log.d("TokenManager", "limparToken")
+        sharedPreferences.edit(commit = true) { putString(KEY, "") }
     }
 }

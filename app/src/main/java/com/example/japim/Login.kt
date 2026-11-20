@@ -1,6 +1,7 @@
 
 package com.example.japim
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.japim.apolloClient.TokenManager
-import com.example.japim.apolloClient.apolloClient
+import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.LoginMutation
 import com.example.japim.graphql.type.Login as LoginInput
 import com.example.japim.ui.theme.*
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun Login(
     modifier: Modifier = Modifier,
+    tokenProvider : TokenManager,
     onCriarConta: () -> Unit = {},
     onLoginSucesso: () -> Unit = {}
 ) {
@@ -188,7 +190,7 @@ fun Login(
 
                         coroutineScope.launch {
                             try {
-                                val response = apolloClient.mutation(
+                                val response = generateApolloClient(tokenProvider).mutation(
                                     LoginMutation(
                                         input = LoginInput(
                                             username = emailInformado,
@@ -215,7 +217,8 @@ fun Login(
                                     }
 
                                     else -> {
-                                        TokenManager.salvarToken(token)
+//                                        val tokenManager = TokenManager(Context);
+                                        tokenProvider.saveToken(token)
                                         onLoginSucesso()
                                     }
                                 }
@@ -282,6 +285,6 @@ fun Login(
 
 @Preview(showBackground = true)
 @Composable
-private fun LoginPreview() {
-    Login()
+private fun LoginPreview(tokenProvider: TokenManager) {
+    Login(tokenProvider=tokenProvider)
 }

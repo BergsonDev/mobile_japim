@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.example.japim.apolloClient.TokenManager
+import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.graphql.type.Event
 import com.example.japim.remoteDataSource.EventRemoteDataSource
@@ -58,28 +61,43 @@ private fun ViewStarterPage(
                     event.name,
                     event.short_description,
                     event.speakers.firstOrNull()?.name ?: "",
-                    10,
-                    10,
-                    event.is_payment,
-                    {
-                        onNavigateToDetails(event.id)
-                    }
-                )
+                    event.total_participants,
+                    event.total_participants,
+                    event.is_payment
+                ) {
+                    onNavigateToDetails(event.id)
+                }
             }
         }
-
     }
 }
 
 
-@Preview(showBackground = true)
 @Composable
 fun StarterPage(
+    tokenProvider: TokenManager,
     onNavigateToCadastro: () -> Unit = {},
     onNavigateToDetails: (String) -> Unit = {},
     onNavigateToEvents : () -> Unit = {}
 ){
-    val eventRemoteDataSource = remember { EventRemoteDataSource(com.example.japim.apolloClient.apolloClient) }
+    val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
+
+    ViewStarterPage(
+        eventRemote = eventRemoteDataSource,
+        onNavigateToDetails = onNavigateToDetails
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StarterPagePreview(
+    onNavigateToCadastro: () -> Unit = {},
+    onNavigateToDetails: (String) -> Unit = {},
+    onNavigateToEvents : () -> Unit = {}
+){
+    val context = LocalContext.current
+    val tokenProvider = remember { TokenManager(context) }
+    val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
 
     ViewStarterPage(
         eventRemote = eventRemoteDataSource,
