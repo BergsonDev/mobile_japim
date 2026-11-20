@@ -329,31 +329,31 @@ fun RegisterEvent(
 
         Spacer(Modifier.height(12.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(EventWhite, RoundedCornerShape(15.dp))
-                .clickable { selecionarImagem.launch("image/*") }
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = when {
-                    imagemUri != null ->
-                        "Nova imagem selecionada\nToque para alterar"
-
-                    !imagemExistente.isNullOrBlank() ->
-                        "Imagem cadastrada\nToque para substituir"
-
-                    else ->
-                        "Selecione uma imagem para customizar a visualização do evento"
-                },
-                color = EventBlack,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
-        }
+//        //Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(140.dp)
+//                .background(EventWhite, RoundedCornerShape(15.dp))
+//                .clickable { selecionarImagem.launch("image/*") }
+//                .padding(16.dp),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text(
+//                text = when {
+//                    imagemUri != null ->
+//                        "Nova imagem selecionada\nToque para alterar"
+//
+//                    !imagemExistente.isNullOrBlank() ->
+//                        "Imagem cadastrada\nToque para substituir"
+//
+//                    else ->
+//                        "Selecione uma imagem para customizar a visualização do evento"
+//                },
+//                color = EventBlack,
+//                fontSize = 13.sp,
+//                textAlign = TextAlign.Center
+//            )
+//        }
 
         Spacer(Modifier.height(12.dp))
 
