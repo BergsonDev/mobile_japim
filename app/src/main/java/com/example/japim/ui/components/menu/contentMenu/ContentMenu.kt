@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.apollographql.apollo.api.label
+import com.example.japim.apolloClient.TokenManager
 import com.example.japim.navigation.Screen
 import com.example.japim.ui.theme.FIFTH
 import com.example.japim.ui.theme.FOURTH
@@ -51,7 +52,8 @@ private fun generateButton (title : String, onClick : ()-> Unit) : Unit{
 }
 @Composable
 fun GenerateContentMenu(
-    onNavigateToEvents : ()-> Unit
+    onNavigateToEvents : ()-> Unit,
+    onExitNavigate : ()-> Unit,
 ){
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -71,7 +73,7 @@ fun GenerateContentMenu(
 
         });
         generateButton("Sair da Conta",{
-
+                onExitNavigate()
         });
 
     }

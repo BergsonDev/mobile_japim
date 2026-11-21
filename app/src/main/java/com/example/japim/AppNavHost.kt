@@ -12,36 +12,36 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import com.example.japim.graphql.AuthQuery
 import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.AuthRemoteDataSource
-import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListScreen
 import com.example.japim.ui.components.GenerateHeader
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.screen.events.RequesterPresenceScreen
+import com.example.japim.screen.events.ValidateRequesterPresenceScreen
+import com.example.japim.ui.events.GenerateEventValidateRequesterPresence
 import com.example.japim.ui.theme.PRIMARY
 
 
 @Composable
-private fun ContentPage(navController : NavController, content : @Composable () -> Unit){
+private fun ContentPage(navController : NavController, content : @Composable () -> Unit, tokenProvider: TokenManager){
     GenerateHeader(
         onNavigateToEvents = {navController.navigate(Screen.Events.route)},
         contentPage = { paddingInterno ->
             Box(modifier = Modifier.padding(paddingInterno)) {
                 content()
             }
+        },
+        {
+            tokenProvider.limparToken()
+            navController.navigate(Screen.Login.route)
         }
     );
 }
@@ -84,7 +84,7 @@ fun AppNavHost(tokenProvider : TokenManager) {
                         }
                     }
                     tokenProvider.limparToken()
-                    navController.navigate("login") {
+                    navController.navigate(Screen.Login.route) {
                         popUpTo("splash") { inclusive = true }
                         launchSingleTop = true
                     }
@@ -92,7 +92,7 @@ fun AppNavHost(tokenProvider : TokenManager) {
             }
         }
 
-        composable("login") {
+        composable(Screen.Login.route) {
             Login(
                 tokenProvider=tokenProvider,
                 onCriarConta = {
@@ -127,7 +127,8 @@ fun AppNavHost(tokenProvider : TokenManager) {
                             )
                         }
                     )
-                }
+                },
+                tokenProvider
             )
         }
 
@@ -161,11 +162,16 @@ fun AppNavHost(tokenProvider : TokenManager) {
                         EventDetailScreen(
                             tokenProvider = tokenProvider,
                             event_id = eventId,
-                            {
+                            { eventId->
                                 navController.navigate(Screen.RequesterPresence.createRoute(eventId))
+                            },
+                            {
+                                eventId -> navController.navigate(Screen.ValidateRequesterPresence.createRoute(eventId))
+
                             }
                         )
-                    }
+                    },
+                    tokenProvider
                 )
             }
         }
@@ -176,7 +182,9 @@ fun AppNavHost(tokenProvider : TokenManager) {
                 navController,
                 {
                     EventListScreen(tokenProvider = tokenProvider)
-                }
+                },
+                tokenProvider
+
             )
         }
 
@@ -203,7 +211,39 @@ fun AppNavHost(tokenProvider : TokenManager) {
                             },
                             eventId
                         )
-                    }
+                    },
+                    tokenProvider
+
+                )
+            }
+        }
+
+        //validate presence
+        composable(
+            route= Screen.ValidateRequesterPresence.route,
+            arguments = listOf(
+                navArgument("event_id"){
+                    type = NavType.StringType
+                }
+            )
+        ){
+                backStackEntry->
+            val eventId = backStackEntry.arguments?.getString("event_id")
+
+            if(eventId!=null){
+                ContentPage(
+                    navController,
+                    {
+                        ValidateRequesterPresenceScreen(
+                            tokenProvider,
+                            onClickReturn = {
+                                navController.navigate(Screen.EventDetails.createRoute(eventId))
+                            },
+                            eventId
+                        )
+                    },
+                    tokenProvider
+
                 )
             }
         }

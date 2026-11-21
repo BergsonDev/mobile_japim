@@ -32,6 +32,7 @@ fun EventDetailScreen(
     tokenProvider: TokenManager,
     event_id : String,
     onNavigateRequestPresence : (String) -> Unit,
+    onNavigateValidateRequestPresence : (String)->Unit,
 
 ){
     val client = remember { generateApolloClient(tokenProvider) }
@@ -127,7 +128,12 @@ fun EventDetailScreen(
                         Log.e("Presence", "Falha ao Finalizar o evento")
                     }
                 }
+            },
+
+            {
+                onNavigateValidateRequestPresence(event_id)
             }
+
         )
     }
 }

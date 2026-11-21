@@ -87,7 +87,8 @@ private fun GenerateCardEvent(
     onClickParticipant : ()-> Unit,
     onClickVolunteer : ()-> Unit,
     onClickPresence : ()-> Unit,
-    onClickFinishEvent : ()->Unit
+    onClickFinishEvent : ()->Unit,
+    onClickValidatePresence : ()-> Unit
     ){
     Card(
         modifier = Modifier.fillMaxSize().padding(10.dp),
@@ -226,6 +227,20 @@ private fun GenerateCardEvent(
             ){
 
                 Button(
+                    onClick = onClickValidatePresence,
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 10.dp
+                    ),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SUCCESS
+                    ),
+                    shape = RoundedCornerShape(5.dp)
+                ) {
+                    Text("Validar Presença")
+                }
+
+                Button(
                     onClick = onClickFinishEvent,
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
@@ -265,6 +280,7 @@ fun GenerateEventDetails(
     onClickVolunteer: () -> Unit,
     onClickPresence: ()-> Unit,
     onClickFinishEvent: () -> Unit,
+    onClickValidatePresence : ()-> Unit,
 ){
     Column(
         modifier = Modifier.fillMaxHeight(.9f).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(10.dp)).background(SECONDARY).padding(vertical = 12.dp).verticalScroll(rememberScrollState()),
@@ -309,7 +325,8 @@ fun GenerateEventDetails(
             onClickParticipant,
             onClickVolunteer,
             onClickPresence,
-            onClickFinishEvent
+            onClickFinishEvent,
+            onClickValidatePresence
         );
 
     }

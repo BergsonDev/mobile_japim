@@ -1,0 +1,10 @@
+mutation ValidateRequesterPresenceCode($code : ID!){
+    validateRequesterPresenceCode(code: $code){
+        id
+        participant {
+            id
+            name
+        }
+        date_presence
+    }
+}
