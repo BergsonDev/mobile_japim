@@ -159,6 +159,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
         composable(Screen.Events.route) {
             ContentPage(navController) {
                 EventListScreen(
+                    apolloClient = apolloClient,
                     onClickRegister = {
                         navController.navigate("register_event")
                     },
