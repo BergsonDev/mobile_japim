@@ -18,21 +18,41 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.japim.ui.theme.FOURTH
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 
 @Composable
 fun GenerateSearchBar(
     placeholder: String,
     actionSearch: (String) -> Unit
-){
+) {
+    var textoPesquisa by remember {
+        mutableStateOf("")
+    }
+
     TextField(
-        value = placeholder,
-        onValueChange = actionSearch,
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        placeholder = { Text("Pesquisar itens...") },
+        value = textoPesquisa,
+        onValueChange = { novoTexto ->
+            textoPesquisa = novoTexto
+            actionSearch(novoTexto)
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        placeholder = {
+            Text(placeholder)
+        },
         singleLine = true,
         shape = MaterialTheme.shapes.extraLarge,
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = FOURTH,
-        ),
+            focusedContainerColor = FOURTH
+        )
     )
 }
+
+
+
+

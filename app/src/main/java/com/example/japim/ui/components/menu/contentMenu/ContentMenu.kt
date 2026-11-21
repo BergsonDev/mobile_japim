@@ -51,7 +51,8 @@ private fun generateButton (title : String, onClick : ()-> Unit) : Unit{
 }
 @Composable
 fun GenerateContentMenu(
-    onNavigateToEvents : ()-> Unit
+    onNavigateToEvents : ()-> Unit,
+    onNavigateToAdmin: () -> Unit = {}
 ){
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -68,7 +69,7 @@ fun GenerateContentMenu(
 
         });
         generateButton("Página Admin",{
-
+            onNavigateToAdmin()
         });
         generateButton("Sair da Conta",{
 
