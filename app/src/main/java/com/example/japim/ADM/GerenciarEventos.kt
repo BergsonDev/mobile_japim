@@ -111,6 +111,17 @@ fun GerenciarEventos(
                 )
             }
 
+            eventosFiltrados.isNullOrEmpty() -> {
+                Text(
+                    text = "Nenhum evento encontrado para \"$pesquisa\".",
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(30.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
             else -> {
                 eventosFiltrados?.forEach { event ->
                     if (event != null) {
