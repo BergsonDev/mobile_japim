@@ -1,6 +1,7 @@
-package com.example.japim
+package com.example.japim.ADM
 
 
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.japim.CampoCadastro
+import com.example.japim.R
 import com.example.japim.ui.theme.*
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
@@ -196,7 +199,7 @@ fun CadastroAdm(
                     cpf.length != 11 ->
                         "O CPF deve conter 11 dígitos."
 
-                    !android.util.Patterns.EMAIL_ADDRESS
+                    !Patterns.EMAIL_ADDRESS
                         .matcher(email.trim()).matches() ->
                         "Informe um e-mail válido."
 

@@ -25,11 +25,11 @@ import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListScreen
 import com.example.japim.ui.components.GenerateHeader
 import android.widget.Toast
-import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-import com.example.japim.toEventInputUpdate
 import androidx.compose.runtime.rememberCoroutineScope
+import com.example.japim.ADM.CadastroAdm
+import com.example.japim.ADM.GerenciarUsuarios
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 
@@ -308,13 +308,13 @@ fun AppNavHost(tokenProvider: TokenManager) {
         composable("pagina_admin") {
             PaginaAdmin(
                 onGerenciarUsuarios = {
-                    // Implementaremos posteriormente
+                    navController.navigate("gerenciar_usuarios")
                 },
                 onCadastrarUsuario = {
                     navController.navigate("cadastro_adm")
                 },
                 onGerenciarEventos = {
-                    // Implementaremos posteriormente
+                    navController.navigate("gerenciar_eventos")
                 },
                 onVoltar = {
                     navController.popBackStack()
@@ -328,6 +328,26 @@ fun AppNavHost(tokenProvider: TokenManager) {
                     navController.popBackStack()
                 },
                 tokenProvider = tokenProvider
+            )
+        }
+    ////GERENCIAR USUARIOS
+        composable("gerenciar_usuarios") {
+            GerenciarUsuarios(
+                onVoltar = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    ////GERENCIAR EVENTOS
+        composable("gerenciar_eventos") {
+            GerenciarEventos(
+                tokenProvider = tokenProvider,
+                onEditarEvento = { eventId ->
+                    // Implementaremos a edição posteriormente
+                },
+                onDeletarEvento = { eventId ->
+                    // Implementaremos a exclusão posteriormente
+                }
             )
         }
     }
