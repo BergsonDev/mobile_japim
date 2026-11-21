@@ -52,15 +52,18 @@ private fun generateButton (title : String, onClick : ()-> Unit) : Unit{
 @Composable
 fun GenerateContentMenu(
     onNavigateToEvents : ()-> Unit,
-    onNavigateToAdmin: () -> Unit = {}
+    onNavigateToAdmin: () -> Unit = {},
+    onNavigateToCertificates: () -> Unit = {},
+    onNavigateToParticipatingEvents: () -> Unit = {}
 ){
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         generateButton("Meus Certificados", {
 //            navController.navigate(Screen.)
+            onNavigateToCertificates()
         });
         generateButton("Eventos que Participo",{
-
+            onNavigateToParticipatingEvents()
         });
         generateButton("Eventos") {
             onNavigateToEvents()

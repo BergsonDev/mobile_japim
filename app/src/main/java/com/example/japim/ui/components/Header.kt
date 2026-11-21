@@ -47,6 +47,8 @@ import com.example.japim.ui.theme.THIRD
 fun GenerateHeader(
     onNavigateToEvents : ()-> Unit,
     onNavigateToAdmin: () -> Unit = {},
+    onNavigateToCertificates: () -> Unit = {},
+    onNavigateToParticipatingEvents: () -> Unit = {},
     contentPage : @Composable (PaddingValues)  -> Unit
 ){
     Scaffold(
@@ -101,7 +103,10 @@ fun GenerateHeader(
                     GenerateMenu { closeMenu ->
                         GenerateContentMenu(
                             onNavigateToEvents = onNavigateToEvents,
-                            onNavigateToAdmin = onNavigateToAdmin
+                            onNavigateToAdmin = onNavigateToAdmin,
+                            onNavigateToCertificates = onNavigateToCertificates,
+                            onNavigateToParticipatingEvents = onNavigateToParticipatingEvents
+
                         );
                     }
                 }

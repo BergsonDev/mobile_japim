@@ -46,6 +46,12 @@ private fun ContentPage(
         onNavigateToAdmin = {
             navController.navigate("pagina_admin")
         },
+        onNavigateToCertificates = {
+            navController.navigate("meus_certificados")
+        },
+        onNavigateToParticipatingEvents = {
+            navController.navigate("eventos_que_participo")
+        },
         contentPage = { paddingInterno ->
             Box(
                 modifier = Modifier.padding(paddingInterno)
@@ -348,6 +354,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 mutableStateOf(0)
             }
 
+
             GerenciarEventos(
                 tokenProvider = tokenProvider,
                 atualizarLista = atualizarLista,
@@ -376,6 +383,20 @@ fun AppNavHost(tokenProvider: TokenManager) {
                     }
                 }
             )
+        }
+
+        ////MEUS CERTIFICADOS
+        composable("meus_certificados") {
+            ContentPage(navController) {
+                MeusCertificados()
+            }
+        }
+
+        //// EVENTOS QUE PARTICIPO
+        composable("eventos_que_participo") {
+            ContentPage(navController) {
+                EventosQueParticipo()
+            }
         }
 
     }
