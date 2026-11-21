@@ -74,6 +74,14 @@ type EventPresence{
     deleted_at: LocalDateTime
 }
 
+type RequesterPresence{
+    code: ID!
+    user: User!
+    event:Event!
+    date: LocalDateTime!
+}
+
+
 input EventInputCreate{
     name: String!
     short_description: String!
@@ -126,4 +134,6 @@ extend type Mutation{
     confirmedPresenceByCoordinator(id: ID!, volunteer_id: ID!) : Event!
     finishEvent(id: ID!) : Event!
     canceledEvent(id: ID!) : Event!
+    requesterPresenceCode(event_id: ID!): RequesterPresence!
+    validateRequesterPresenceCode(code: ID!):EventPresence!
 }

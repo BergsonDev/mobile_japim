@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
+import com.example.japim.screen.events.RequesterPresenceScreen
 import com.example.japim.ui.theme.PRIMARY
 
 
@@ -140,6 +141,7 @@ fun AppNavHost(tokenProvider : TokenManager) {
             )
         }
 
+        // details for events screen
         composable(
             route = Screen.EventDetails.route,
             arguments = listOf(
@@ -158,14 +160,17 @@ fun AppNavHost(tokenProvider : TokenManager) {
                     {
                         EventDetailScreen(
                             tokenProvider = tokenProvider,
-                            event_id = eventId
+                            event_id = eventId,
+                            {
+                                navController.navigate(Screen.RequesterPresence.createRoute(eventId))
+                            }
                         )
                     }
                 )
             }
         }
 
-        // Lista de eventos
+        // list of events
         composable(Screen.Events.route) {
             ContentPage(
                 navController,
@@ -173,6 +178,34 @@ fun AppNavHost(tokenProvider : TokenManager) {
                     EventListScreen(tokenProvider = tokenProvider)
                 }
             )
+        }
+
+        // requester presence
+        composable(
+            route= Screen.RequesterPresence.route,
+            arguments = listOf(
+                navArgument("event_id"){
+                    type = NavType.StringType
+                }
+            )
+        ){
+            backStackEntry->
+            val eventId = backStackEntry.arguments?.getString("event_id")
+
+            if(eventId!=null){
+                ContentPage(
+                    navController,
+                    {
+                        RequesterPresenceScreen(
+                            tokenProvider,
+                            {
+                                navController.navigate(Screen.EventDetails)
+                            },
+                            eventId
+                        )
+                    }
+                )
+            }
         }
     }
 }

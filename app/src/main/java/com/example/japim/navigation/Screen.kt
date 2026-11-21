@@ -8,4 +8,8 @@ sealed class Screen(val route: String) {
     }
 
     object Events : Screen("events")
+
+    object RequesterPresence : Screen("requester_presence/{event_id}"){
+        fun createRoute(event_id: String) = "requester_presence/$event_id"
+    }
 }

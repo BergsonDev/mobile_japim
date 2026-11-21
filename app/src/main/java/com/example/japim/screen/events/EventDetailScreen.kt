@@ -21,6 +21,7 @@ import com.example.japim.graphql.AuthQuery
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.ERROR
 import androidx.compose.material3.Text
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
@@ -29,7 +30,9 @@ import com.example.japim.apolloClient.generateApolloClient
 @Composable
 fun EventDetailScreen(
     tokenProvider: TokenManager,
-    event_id : String
+    event_id : String,
+    onNavigateRequestPresence : (String) -> Unit,
+
 ){
     val client = remember { generateApolloClient(tokenProvider) }
     val authRemoteDataSource = remember { AuthRemoteDataSource(client) }
@@ -113,14 +116,7 @@ fun EventDetailScreen(
                 }
             },
             onClickPresence = {
-                coroutineScope.launch {
-                    val result = eventRemoteDataSource.confirmedPresenceByVolunteer(it.id, currentUser.id)
-                    if(result != null){
-                        Log.d("Presence", "Presença confirmada com sucesso: ${result.id}")
-                    } else {
-                        Log.e("Presence", "Falha ao confirmar a presença")
-                    }
-                }
+                onNavigateRequestPresence(event_id)
             },
             onClickFinishEvent = {
                 coroutineScope.launch {

@@ -31,6 +31,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "GRAPHQL_SERVER_URL", "\"$serverUrl\"")
+        buildConfigField("String", "SECRET_KEY_QR_CODE", localProperties.getProperty("SECRET_KEY_QR_CODE"))
     }
 
     buildFeatures {
@@ -84,4 +85,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("com.apollographql.apollo:apollo-runtime:5.2.0")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("com.google.zxing:core:3.5.3")
 }

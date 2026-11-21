@@ -8,6 +8,7 @@ import com.example.japim.graphql.FinishEventMutation
 import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.graphql.GetPresenceParticipantQuery
+import com.example.japim.graphql.RequesterPresenceCodeMutation
 import com.example.japim.graphql.SubscribeParticipantMutation
 import com.example.japim.graphql.SubscribeVolunteerMutation
 
@@ -126,6 +127,19 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
                 Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
             }
             response.data?.finishEvent
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
+
+    suspend fun requesterPresenceCode(id : String) : RequesterPresenceCodeMutation.RequesterPresenceCode?{
+        return try {
+            val response = apolloClient.mutation(RequesterPresenceCodeMutation(id)).execute();
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            }
+            response.data?.requesterPresenceCode
         } catch (e: Exception) {
             Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
             null
