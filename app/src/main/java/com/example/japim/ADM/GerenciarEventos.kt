@@ -16,10 +16,14 @@ import com.example.japim.graphql.GetEventsQuery
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.components.cards.GenerateCardCrud
 import com.example.japim.ui.components.search.GenerateSearchBar
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 
 @Composable
 fun GerenciarEventos(
     tokenProvider: TokenManager,
+    atualizarLista: Int = 0,
     onEditarEvento: (String) -> Unit = {},
     onDeletarEvento: (String) -> Unit = {}
 ) {
@@ -28,11 +32,36 @@ fun GerenciarEventos(
     }
 
     var events by remember {
-        mutableStateOf<List<GetEventsQuery.Event?>?>(emptyList())
+        mutableStateOf<List<GetEventsQuery.Event?>?>(null)
     }
 
-    LaunchedEffect(eventRemoteDataSource) {
-        events = eventRemoteDataSource.fetchEvents()
+    var carregando by remember {
+        mutableStateOf(true)
+    }
+
+    LaunchedEffect(eventRemoteDataSource, atualizarLista) {
+        carregando = true
+        events = null
+
+        try {
+            events = eventRemoteDataSource.fetchEvents()
+        } finally {
+            carregando = false
+        }
+    }
+    var eventoParaExcluir by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var pesquisa by remember {
+        mutableStateOf("")
+    }
+
+    val eventosFiltrados = events?.filter { event ->
+        event != null && event.name.contains(
+            pesquisa.trim(),
+            ignoreCase = true
+        )
     }
 
     Column(
@@ -41,25 +70,104 @@ fun GerenciarEventos(
             .background(Color.Black)
             .verticalScroll(rememberScrollState())
     ) {
-        GenerateSearchBar("Pesquisar eventos", {})
+        GenerateSearchBar(
+            placeholder = "Pesquisar eventos",
+            actionSearch = { texto ->
+                pesquisa = texto
+            }
+        )
 
-        events?.forEach { event ->
-            if (event != null) {
-                GenerateCardCrud(
-                    title = event.name,
-                    text = event.short_description,
-                    speaker = event.speakers.firstOrNull()?.name ?: "",
-                    totalParticipants = event.total_participants,
-                    totalVolunteers = event.total_participants,
-                    isPayment = event.is_payment,
-                    onClickUpdate = {
-                        onEditarEvento(event.id)
-                    },
-                    onClickDelete = {
-                        onDeletarEvento(event.id)
-                    }
+        when {
+            carregando -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            events == null -> {
+                Text(
+                    text = "Não foi possível carregar os eventos.",
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(30.dp),
+                    textAlign = TextAlign.Center
                 )
             }
+
+            events!!.isEmpty() -> {
+                Text(
+                    text = "Nenhum evento cadastrado no momento.",
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(30.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            else -> {
+                eventosFiltrados?.forEach { event ->
+                    if (event != null) {
+                        GenerateCardCrud(
+                            title = event.name,
+                            text = event.short_description,
+                            speaker = event.speakers.firstOrNull()?.name ?: "",
+                            totalParticipants = event.total_participants,
+                            totalVolunteers = event.total_participants,
+                            isPayment = event.is_payment,
+                            onClickUpdate = {
+                                onEditarEvento(event.id)
+                            },
+                            onClickDelete = {
+                                eventoParaExcluir = event.id
+                            }
+                        )
+                    }
+                }
+            }
         }
+
+        eventoParaExcluir?.let { eventId ->
+            AlertDialog(
+                onDismissRequest = {
+                    eventoParaExcluir = null
+                },
+                title = {
+                    Text("Excluir evento")
+                },
+                text = {
+                    Text(
+                        "Tem certeza de que deseja excluir este evento? " +
+                                "Essa ação não poderá ser desfeita."
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            eventoParaExcluir = null
+                            onDeletarEvento(eventId)
+                        }
+                    ) {
+                        Text("Excluir", color = Color.Red)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            eventoParaExcluir = null
+                        }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+
     }
 }

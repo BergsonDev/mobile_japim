@@ -338,17 +338,45 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             )
         }
-    ////GERENCIAR EVENTOS
+
+////GERENCIAR EVENTOS
         composable("gerenciar_eventos") {
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+
+            var atualizarLista by remember {
+                mutableStateOf(0)
+            }
+
             GerenciarEventos(
                 tokenProvider = tokenProvider,
+                atualizarLista = atualizarLista,
                 onEditarEvento = { eventId ->
-                    // Implementaremos a edição posteriormente
+                    navController.navigate("register_event/$eventId")
                 },
                 onDeletarEvento = { eventId ->
-                    // Implementaremos a exclusão posteriormente
+                    scope.launch {
+                        val resultado = eventRemoteDataSource.deleteEvent(eventId)
+
+                        if (resultado != null) {
+                            Toast.makeText(
+                                context,
+                                "Evento excluído com sucesso!",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            atualizarLista++
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Não foi possível excluir o evento.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
             )
         }
+
     }
 }
