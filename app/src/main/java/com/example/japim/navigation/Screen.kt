@@ -17,4 +17,8 @@ sealed class Screen(val route: String) {
     object ValidateRequesterPresence : Screen("validate_requester_presence/{event_id}"){
         fun createRoute(event_id: String) = "validate_requester_presence/$event_id"
     }
+
+    object ListPresencesInEvent : Screen("event_presences/{event_id}"){
+        fun createRoute(event_id: String) = "event_presences/$event_id";
+    }
 }

@@ -55,6 +55,7 @@ fun GenerateContentMenu(
             onNavigateToEvents()
         }
         generateButton("Validar Certificado") {
+
         }
         generateButton("Página Admin") {
             onNavigateToAdmin()

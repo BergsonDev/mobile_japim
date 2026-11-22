@@ -1,0 +1,7 @@
+mutation RemoveConfirmedPresenceByCoordinator($event_id : ID!, $volunteer_id : ID!){
+    removeConfirmedPresenceByCoordinator(id : $event_id,volunteer_id:$volunteer_id){
+        id
+        name
+        in_event
+    }
+}

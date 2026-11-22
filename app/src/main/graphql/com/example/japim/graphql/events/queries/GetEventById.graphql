@@ -33,9 +33,20 @@ query GetEventById($id : ID!){
         in_event
         participants {
             id
+            name
+            role {
+                id
+                initialism
+            }
         }
         volunteers {
             id
+            id
+            name
+            role {
+                id
+                initialism
+            }
         }
     }
 

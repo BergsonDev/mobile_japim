@@ -1,0 +1,6 @@
+mutation RemoveConfirmedPresenceByVolunteer($event_id : ID!, $participant_id: ID!){
+    removeConfirmedPresenceByVolunteer(id: $event_id, participant_id: $participant_id){
+        id
+        name
+    }
+}

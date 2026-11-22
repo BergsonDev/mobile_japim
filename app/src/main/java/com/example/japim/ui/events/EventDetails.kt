@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.japim.globalsFunctions.parseReal
-import com.example.japim.graphql.GetPresenceParticipantQuery
+import com.example.japim.graphql.GetParticipantPresenceInDayQuery
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.theme.MPlus2
 import com.example.japim.ui.theme.PRIMARY
@@ -65,6 +65,19 @@ private fun isManagementOrStaff(role: String): Boolean {
 private fun isUserOrStudent(role: String): Boolean {
     return role in listOf(USER, STUDENT)
 }
+@Composable
+private fun isConfirmedDay(event_id: String, participant_id: String) : Boolean{
+    val context = LocalContext.current
+    val tokenProvider = remember { TokenManager(context) }
+    val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
+    var verifyParticipant by remember { mutableStateOf<GetParticipantPresenceInDayQuery.ParticipantPresenceInDay?>(null) }
+    LaunchedEffect(Unit){
+        verifyParticipant = eventRemoteDataSource.participantPresenceInDay(event_id, participant_id, java.time.LocalDateTime.now())
+    }
+
+    return verifyParticipant != null
+}
+
 
 @Composable
 private fun generateButton(
@@ -78,7 +91,8 @@ private fun generateButton(
     onClickSubscribeVolunteer: () -> Unit,
     onClickRequesterPresence: () -> Unit,
     onClickValidateRequesterPresence : ()->Unit,
-    onClickFinishEvent: ()-> Unit
+    onClickFinishEvent: ()-> Unit,
+    onClickRedirectListPresences: ()-> Unit
 ){
     // Management, coordinators, speakers, directors (ADMIN, COORD, SPE, DIR)
     if (!isFinished(status) && isManagementOrStaff(auth_role)) {
@@ -112,6 +126,24 @@ private fun generateButton(
                 shape = RoundedCornerShape(5.dp)
             ) {
                 Text("Finalizar Evento")
+            }
+        }
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Button(
+                onClick = onClickRedirectListPresences,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
+            ) {
+                Text("Fazer Chamada")
             }
         }
         return
@@ -240,20 +272,6 @@ private fun generateButton(
         }
     }
 }
-
-@Composable
-private fun isConfirmedDay(event_id: String, participant_id: String) : Boolean{
-    val context = LocalContext.current
-    val tokenProvider = remember { TokenManager(context) }
-    val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
-    var verifyParticipant by remember { mutableStateOf<GetPresenceParticipantQuery.ParticipantPresenceDay?>(null) }
-    LaunchedEffect(Unit){
-        verifyParticipant = eventRemoteDataSource.participantPresenceDay(event_id,participant_id)
-    }
-
-    return verifyParticipant != null
-}
-
 @Composable
 private fun GenerateCardEvent(
     id : String,
@@ -272,7 +290,8 @@ private fun GenerateCardEvent(
     onClickVolunteer : ()-> Unit,
     onClickPresence : ()-> Unit,
     onClickFinishEvent : ()->Unit,
-    onClickValidatePresence : ()-> Unit
+    onClickValidatePresence : ()-> Unit,
+    onClickRedirectListPresences : ()-> Unit
 ){
     Card(
         modifier = Modifier.fillMaxSize().padding(10.dp),
@@ -351,7 +370,8 @@ private fun GenerateCardEvent(
             onClickVolunteer,
             onClickPresence,
             onClickValidatePresence,
-            onClickFinishEvent
+            onClickFinishEvent,
+            onClickRedirectListPresences
         )
     }
 }
@@ -378,6 +398,7 @@ fun GenerateEventDetails(
     onClickPresence: ()-> Unit,
     onClickFinishEvent: () -> Unit,
     onClickValidatePresence : ()-> Unit,
+    onClickRedirectListPresences : ()->Unit,
 ){
     Column(
         modifier = Modifier.fillMaxHeight(.9f).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(10.dp)).background(SECONDARY).padding(vertical = 12.dp).verticalScroll(rememberScrollState()),
@@ -424,7 +445,8 @@ fun GenerateEventDetails(
             onClickVolunteer,
             onClickPresence,
             onClickFinishEvent,
-            onClickValidatePresence
+            onClickValidatePresence,
+            onClickRedirectListPresences
         );
     }
 }

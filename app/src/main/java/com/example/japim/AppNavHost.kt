@@ -32,6 +32,7 @@ import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.AuthRemoteDataSource
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
+import com.example.japim.screen.events.EventListPresenceScreen
 import com.example.japim.screen.events.EventListScreen
 import com.example.japim.screen.events.RequesterPresenceScreen
 import com.example.japim.screen.events.ValidateRequesterPresenceScreen
@@ -195,6 +196,12 @@ fun AppNavHost(tokenProvider: TokenManager) {
                             },
                             onNavigateValidateRequestPresence = { id ->
                                 navController.navigate(Screen.ValidateRequesterPresence.createRoute(id))
+                            },
+                            {id->
+                                navController.navigate(Screen.ListPresencesInEvent.createRoute(id))
+                            },
+                            {
+                                navController.popBackStack()
                             }
                         )
                     },
@@ -520,6 +527,34 @@ fun AppNavHost(tokenProvider: TokenManager) {
                     tokenProvider
                 )
             }
+        }
+
+        //list of presences in event
+        composable(
+            Screen.ListPresencesInEvent.route,
+            arguments = listOf(
+                navArgument("event_id"){
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            backStackEntry->
+                val eventId = backStackEntry.arguments?.getString("event_id")
+                if(eventId != null){
+                    ContentPage(
+                        navController,
+                        {
+                            EventListPresenceScreen(
+                                eventId,
+                                tokenProvider,
+                                {
+                                    navController.popBackStack()
+                                }
+                            )
+                        },
+                        tokenProvider
+                    )
+                }
         }
     }
 }
