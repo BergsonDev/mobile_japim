@@ -41,23 +41,206 @@ import com.example.japim.ui.theme.MPlus2
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.SECONDARY
 import com.example.japim.ui.theme.SUCCESS
-import kotlinx.coroutines.coroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 
 
 private val FINISHED = "ENC"
-private val USER = "USE"
-private val VOLUNTEER = "VOL"
+private val ADMIN = "ADMIN"
+private val USER = "USER"
 private val STUDENT = "STU"
+private val COORD = "COORD"
+private val SPEAKER = "SPE"
+private val DIRECTOR = "DIR"
+
 private fun isFinished(status: String) : Boolean{
-    return FINISHED == status;
+    return FINISHED == status
 }
 
-private fun isParticipant(initialism : String) : Boolean{
-    return initialism in listOf(USER, VOLUNTEER, STUDENT);
+private fun isManagementOrStaff(role: String): Boolean {
+    return role in listOf(ADMIN, COORD, SPEAKER, DIRECTOR)
 }
+
+private fun isUserOrStudent(role: String): Boolean {
+    return role in listOf(USER, STUDENT)
+}
+
+@Composable
+private fun generateButton(
+    in_event : Boolean,
+    is_volunteer: Boolean,
+    status : String,
+    event_id: String,
+    auth_id : String,
+    auth_role : String,
+    onClickSubscribeParticipant: () -> Unit,
+    onClickSubscribeVolunteer: () -> Unit,
+    onClickRequesterPresence: () -> Unit,
+    onClickValidateRequesterPresence : ()->Unit,
+    onClickFinishEvent: ()-> Unit
+){
+    // Management, coordinators, speakers, directors (ADMIN, COORD, SPE, DIR)
+    if (!isFinished(status) && isManagementOrStaff(auth_role)) {
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Button(
+                onClick = onClickValidateRequesterPresence,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
+            ) {
+                Text("Validar Presença")
+            }
+
+            Button(
+                onClick = onClickFinishEvent,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
+            ) {
+                Text("Finalizar Evento")
+            }
+        }
+        return
+    }
+
+    // Users and Students (USER, STU)
+    if (isUserOrStudent(auth_role)) {
+        // Not subscribed and event not finished
+        if (!in_event && !isFinished(status)) {
+            Row(
+                Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Button(
+                    onClick = onClickSubscribeParticipant,
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 10.dp
+                    ),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SUCCESS
+                    ),
+                    shape = RoundedCornerShape(5.dp)
+                ) {
+                    Text("Ser Participante")
+                }
+
+                Button(
+                    onClick = onClickSubscribeVolunteer,
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 10.dp
+                    ),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SUCCESS
+                    ),
+                    shape = RoundedCornerShape(5.dp)
+                ) {
+                    Text("Ser Voluntário")
+                }
+            }
+            return
+        }
+
+        // Event finished -> Generate Certificate
+        if (isFinished(status)) {
+            Row(
+                Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = { },
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 10.dp
+                    ),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SUCCESS
+                    ),
+                    shape = RoundedCornerShape(5.dp)
+                ) {
+                    Text("Gerar Certificado")
+                }
+            }
+            return
+        }
+
+        // Subscribed and event not finished
+        if (in_event && !isFinished(status) && !isConfirmedDay(event_id, auth_id)) {
+            if (is_volunteer) {
+                // Volunteer can both request presence and validate presence of participants
+                Row(
+                    Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Button(
+                        onClick = onClickRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Solicitar Presença")
+                    }
+
+                    Button(
+                        onClick = onClickValidateRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Validar Presença")
+                    }
+                }
+            } else {
+                // Participant only can request presence
+                Row(
+                    Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = onClickRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Solicitar Presença")
+                    }
+                }
+            }
+            return
+        }
+    }
+}
+
 @Composable
 private fun isConfirmedDay(event_id: String, participant_id: String) : Boolean{
     val context = LocalContext.current
@@ -81,14 +264,16 @@ private fun GenerateCardEvent(
     workload : Int,
     value : Double,
     in_event : Boolean,
+    is_volunteer: Boolean,
     status : String,
     auth_id : String,
     auth_role:  String,
     onClickParticipant : ()-> Unit,
     onClickVolunteer : ()-> Unit,
     onClickPresence : ()-> Unit,
-    onClickFinishEvent : ()->Unit
-    ){
+    onClickFinishEvent : ()->Unit,
+    onClickValidatePresence : ()-> Unit
+){
     Card(
         modifier = Modifier.fillMaxSize().padding(10.dp),
         shape = RoundedCornerShape(0),
@@ -99,11 +284,9 @@ private fun GenerateCardEvent(
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalArrangement = Arrangement.SpaceAround,
-
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
-
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
@@ -113,13 +296,10 @@ private fun GenerateCardEvent(
 
                 Text("Participantes", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp, fontWeight = FontWeight.Bold);
                 Text("$total_participants/$max_participants", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
-
             }
-
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
-
             ) {
                 Icon(
                     imageVector = Icons.Default.SupportAgent,
@@ -131,10 +311,8 @@ private fun GenerateCardEvent(
                 Text("$total_volunteers/$max_volunteers", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
             }
 
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
-
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreTime,
@@ -146,13 +324,10 @@ private fun GenerateCardEvent(
                 Text("$workload", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
             }
 
-
             if(value != 0.0){
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
-
                 ) {
-
                     Icon(
                         imageVector = Icons.Default.Paid,
                         contentDescription = "Valor",
@@ -165,86 +340,22 @@ private fun GenerateCardEvent(
             }
         }
 
-        if(!in_event && !isFinished(status)){
-            Row(
-                Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Button(
-                    onClick = onClickParticipant,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 10.dp
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SUCCESS
-                    ),
-                    shape = RoundedCornerShape(5.dp)
-                ) {
-                    Text("Ser Participante")
-                }
-
-                Button(
-                    onClick = onClickVolunteer,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 10.dp
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SUCCESS
-                    ),
-                    shape = RoundedCornerShape(5.dp)
-                ) {
-                    Text("Ser Voluntário")
-                }
-
-            }
-        }else if(!isFinished(status) && !isConfirmedDay(id, auth_id) && isParticipant(auth_role) ){
-            Row(
-                Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center
-            ){
-
-                Button(
-                    onClick = onClickPresence,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 10.dp
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SUCCESS
-                    ),
-                    shape = RoundedCornerShape(5.dp)
-                ) {
-                    Text("Solicitar Presença")
-                }
-            }
-        }else if(!isFinished(status)){
-            Row(
-                Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center
-            ){
-
-                Button(
-                    onClick = onClickFinishEvent,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 10.dp
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SUCCESS
-                    ),
-                    shape = RoundedCornerShape(5.dp)
-                ) {
-                    Text("Finalizar Evento")
-                }
-            }
-        }
-
-
-
+        generateButton(
+            in_event,
+            is_volunteer,
+            status,
+            id,
+            auth_id,
+            auth_role,
+            onClickParticipant,
+            onClickVolunteer,
+            onClickPresence,
+            onClickValidatePresence,
+            onClickFinishEvent
+        )
     }
 }
+
 @Composable
 fun GenerateEventDetails(
     id: String,
@@ -258,6 +369,7 @@ fun GenerateEventDetails(
     workload: Int,
     value: Double,
     in_event: Boolean,
+    is_volunteer: Boolean,
     status: String,
     auth_id : String,
     auth_role: String,
@@ -265,6 +377,7 @@ fun GenerateEventDetails(
     onClickVolunteer: () -> Unit,
     onClickPresence: ()-> Unit,
     onClickFinishEvent: () -> Unit,
+    onClickValidatePresence : ()-> Unit,
 ){
     Column(
         modifier = Modifier.fillMaxHeight(.9f).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(10.dp)).background(SECONDARY).padding(vertical = 12.dp).verticalScroll(rememberScrollState()),
@@ -303,15 +416,15 @@ fun GenerateEventDetails(
             workload,
             value,
             in_event,
+            is_volunteer,
             status,
             auth_id,
             auth_role,
             onClickParticipant,
             onClickVolunteer,
             onClickPresence,
-            onClickFinishEvent
+            onClickFinishEvent,
+            onClickValidatePresence
         );
-
     }
-
 }

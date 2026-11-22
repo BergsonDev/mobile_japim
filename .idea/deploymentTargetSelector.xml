@@ -6,16 +6,20 @@
         <option name="selectionMode" value="DROPDOWN" />
         <DialogSelection />
       </SelectionState>
+<<<<<<< HEAD
       <SelectionState runConfigName="main">
         <option name="selectionMode" value="DROPDOWN" />
         <DialogSelection />
       </SelectionState>
+=======
+>>>>>>> feat/validatePresence
       <SelectionState runConfigName="unitTest">
         <option name="selectionMode" value="DROPDOWN" />
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="androidTest">
         <option name="selectionMode" value="DROPDOWN" />
+<<<<<<< HEAD
         <DropdownSelection timestamp="2026-11-19T04:39:04.748109Z">
           <Target type="DEFAULT_BOOT">
             <handle>
@@ -23,6 +27,12 @@
             </handle>
           </Target>
         </DropdownSelection>
+=======
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="main">
+        <option name="selectionMode" value="DROPDOWN" />
+>>>>>>> feat/validatePresence
         <DialogSelection />
       </SelectionState>
     </selectionStates>

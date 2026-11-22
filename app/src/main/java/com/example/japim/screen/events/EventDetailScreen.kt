@@ -21,6 +21,7 @@ import com.example.japim.graphql.AuthQuery
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.ERROR
 import androidx.compose.material3.Text
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
@@ -29,7 +30,10 @@ import com.example.japim.apolloClient.generateApolloClient
 @Composable
 fun EventDetailScreen(
     tokenProvider: TokenManager,
-    event_id : String
+    event_id : String,
+    onNavigateRequestPresence : (String) -> Unit,
+    onNavigateValidateRequestPresence : (String)->Unit,
+
 ){
     val client = remember { generateApolloClient(tokenProvider) }
     val authRemoteDataSource = remember { AuthRemoteDataSource(client) }
@@ -77,6 +81,7 @@ fun EventDetailScreen(
     }
 
     event?.let {
+        val isVolunteer = it.volunteers?.any { volunteer -> volunteer?.id == currentUser.id } == true
         GenerateEventDetails(
             id=it.id,
             title = it.name,
@@ -88,10 +93,11 @@ fun EventDetailScreen(
             max_volunteers = it.max_volunteers,
             workload = it.workload,
             value = it.value,
-            it.in_event,
-            it.status_event.initialism,
-            currentUser.id,
-            currentUser.role.initialism,
+            in_event = it.in_event,
+            is_volunteer = isVolunteer,
+            status = it.status_event.initialism,
+            auth_id = currentUser.id,
+            auth_role = currentUser.role.initialism,
             onClickParticipant = {
                 coroutineScope.launch {
                     val result = eventRemoteDataSource.subscribeParticipant(event_id)
@@ -113,14 +119,7 @@ fun EventDetailScreen(
                 }
             },
             onClickPresence = {
-                coroutineScope.launch {
-                    val result = eventRemoteDataSource.confirmedPresenceByVolunteer(it.id, currentUser.id)
-                    if(result != null){
-                        Log.d("Presence", "Presença confirmada com sucesso: ${result.id}")
-                    } else {
-                        Log.e("Presence", "Falha ao confirmar a presença")
-                    }
-                }
+                onNavigateRequestPresence(event_id)
             },
             onClickFinishEvent = {
                 coroutineScope.launch {
@@ -131,7 +130,12 @@ fun EventDetailScreen(
                         Log.e("Presence", "Falha ao Finalizar o evento")
                     }
                 }
+            },
+
+            onClickValidatePresence = {
+                onNavigateValidateRequestPresence(event_id)
             }
+
         )
     }
 }

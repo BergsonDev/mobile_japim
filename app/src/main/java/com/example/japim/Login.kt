@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.LoginMutation
+import com.example.japim.ui.components.GenerateErrorToast
 import com.example.japim.graphql.type.Login as LoginInput
 import com.example.japim.ui.theme.*
 import kotlinx.coroutines.launch
@@ -36,6 +37,9 @@ fun Login(
     onCriarConta: () -> Unit = {},
     onLoginSucesso: () -> Unit = {}
 ) {
+
+    var showAlert = remember { mutableStateOf(false) }
+    var msgError = remember { mutableStateOf<String?>(null)}
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var carregando by remember { mutableStateOf(false) }
@@ -205,19 +209,21 @@ fun Login(
 
                                 when {
                                     response.exception != null -> {
-                                        mensagemErro = "Não foi possível conectar à API."
+                                        showAlert.value = true
+                                        msgError.value = "E-mail ou senha inválidos."
                                     }
 
                                     response.errors?.isNotEmpty() == true -> {
-                                        mensagemErro = "E-mail ou senha inválidos."
+                                        showAlert.value = true
+                                        msgError.value = "E-mail ou senha inválidos."
                                     }
 
                                     token.isNullOrBlank() -> {
-                                        mensagemErro = "A API não retornou um token válido."
+                                        showAlert.value = true
+                                        msgError.value = "O servidor não respondeu corretamente !"
                                     }
 
                                     else -> {
-//                                        val tokenManager = TokenManager(Context);
                                         tokenProvider.saveToken(token)
                                         onLoginSucesso()
                                     }
@@ -225,12 +231,13 @@ fun Login(
 
 
                             } catch (e: Exception) {
-                                mensagemErro =
-                                    "Falha de conexão. Verifique a API e a rede."
+                                showAlert.value = true
+                                msgError.value = "Erro na comunicação com o servidor"
                             } finally {
                                 carregando = false
                             }
                         }
+
                     }
                 }
             },
@@ -280,6 +287,19 @@ fun Login(
                 fontWeight = FontWeight.Bold
             )
         }
+    }
+
+
+    if(showAlert.value && msgError.value != null) {
+        GenerateErrorToast(
+            showAlert.value,
+            "Erro no Login",
+            msgError.value!!,
+            listOf(),
+            {
+                msgError.value = null
+            }
+        )
     }
 }
 
