@@ -1,5 +1,6 @@
 package com.example.japim.navigation
 
+import ManageRolesScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -17,7 +18,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListScreen
@@ -26,7 +26,6 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import com.example.japim.screen.adm.CadastroAdm
 import com.example.japim.screen.adm.GerenciarUsuarios
 import com.example.japim.screen.Cadastro
 import com.example.japim.EventFormData
@@ -52,6 +51,16 @@ import androidx.navigation.navArgument
 import androidx.compose.runtime.collectAsState
 import com.example.japim.screen.certificates.CertificateDetailScreen
 import com.example.japim.util.rememberCertificateDownload
+import com.example.japim.remoteDataSource.RoleRemoteDataSource
+import com.example.japim.repository.RoleRepository
+import com.example.japim.viewmodel.RoleViewModel
+import com.example.japim.repository.EventRepository
+import com.example.japim.viewmodel.EventViewModel
+import com.example.japim.remoteDataSource.UserRemoteDataSource
+import com.example.japim.repository.UserRepository
+import com.example.japim.viewmodel.UserViewModel
+
+
 
 @Composable
 private fun ContentPage(
@@ -177,15 +186,91 @@ fun AppNavHost(tokenProvider: TokenManager) {
 
         // LISTA DE EVENTOS
         composable(Screen.Events.route) {
+
+            val userViewModel: UserViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        val remoteDataSource =
+                            UserRemoteDataSource(apolloClient)
+
+                        val repository =
+                            UserRepository(remoteDataSource)
+
+                        UserViewModel(repository)
+                    }
+                }
+            )
+
+            val eventViewModel: EventViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        val remoteDataSource =
+                            EventRemoteDataSource(apolloClient)
+
+                        val repository =
+                            EventRepository(remoteDataSource)
+
+                        EventViewModel(repository)
+                    }
+                }
+            )
+
+
+            val currentUser by userViewModel.currentUser.collectAsState()
+            val isUserLoading by userViewModel.isLoading.collectAsState()
+            val userError by userViewModel.error.collectAsState()
+
+
+            LaunchedEffect(currentUser, userError) {
+                android.util.Log.d(
+                    "JapimUser",
+                    "Usuário: ${currentUser?.name}, " +
+                            "Cargo: ${currentUser?.role?.initialism}, " +
+                            "Permissões: ${currentUser?.role?.permissions?.mapNotNull { it?.name }}, " +
+                            "Erro: $userError"
+                )
+            }
+
+
+            val userRole = currentUser?.role?.initialism?.uppercase()
+
+            val canCreateEvent = userViewModel.hasPermission("events-create") &&
+                    userRole in setOf("ADMIN", "COORD", "DIR", "SPE")
+
+            val canUpdateEvent = userViewModel.hasPermission("events-update") &&
+                    userRole in setOf("ADMIN", "COORD", "DIR", "SPE")
+
+            val canDeleteEvent = userViewModel.hasPermission("events-delete") &&
+                    userRole in setOf("ADMIN", "COORD", "DIR", "SPE")
+
+
             ContentPage(navController) {
                 EventListScreen(
-                    apolloClient = apolloClient,
+                    viewModel = eventViewModel,
+
                     onClickRegister = {
-                        navController.navigate(Screen.RegisterEvent.route)
+                        navController.navigate(
+                            Screen.RegisterEvent.route
+                        )
                     },
+
                     onClickUpdate = { eventId ->
-                        navController.navigate(Screen.UpdateEvent.createRoute(eventId))
-                    }
+                        navController.navigate(
+                            Screen.UpdateEvent.createRoute(eventId)
+                        )
+                    },
+
+                    onClickDetails = { eventId ->
+                        navController.navigate(
+                            Screen.EventDetails.createRoute(eventId)
+                        )
+                    },
+
+                    canCreate = canCreateEvent,
+                    canUpdate = canUpdateEvent,
+                    canDelete = canDeleteEvent,
+                    currentUserId = currentUser?.id,
+                    currentUserRole = userRole
                 )
             }
         }
@@ -336,13 +421,14 @@ fun AppNavHost(tokenProvider: TokenManager) {
             ContentPage(navController) {
                 PaginaAdmin(
                     onGerenciarUsuarios = {
-                        navController.navigate(Screen.ManageUsers.route)
+                        navController.navigate(
+                            Screen.ManageUsers.route
+                        )
                     },
-                    onCadastrarUsuario = {
-                        navController.navigate(Screen.RegisterAdmin.route)
-                    },
-                    onGerenciarEventos = {
-                        navController.navigate(Screen.ManageEvents.route)
+                    onGerenciarCargos = {
+                        navController.navigate(
+                            Screen.ManageRoles.route
+                        )
                     },
                     onVoltar = {
                         navController.popBackStack()
@@ -350,14 +436,31 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 )
             }
         }
-        ////CADASTRO ADM
-        composable(Screen.RegisterAdmin.route) {
+        ////CADASTRO COM CARGO
+        composable(Screen.RegisterUser.route) {
+
+            val roleViewModel: RoleViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        val remoteDataSource =
+                            RoleRemoteDataSource(apolloClient)
+
+                        val repository =
+                            RoleRepository(remoteDataSource)
+
+                        RoleViewModel(repository)
+                    }
+                }
+            )
+
             ContentPage(navController) {
-                CadastroAdm(
-                    onVoltar = {
+                Cadastro(
+                    tokenProvider = tokenProvider,
+                    isAdminRegistration = true,
+                    roleViewModel = roleViewModel,
+                    onVoltarLogin = {
                         navController.popBackStack()
-                    },
-                    tokenProvider = tokenProvider
+                    }
                 )
             }
         }
@@ -365,6 +468,11 @@ fun AppNavHost(tokenProvider: TokenManager) {
         composable(Screen.ManageUsers.route) {
             ContentPage(navController) {
                 GerenciarUsuarios(
+                    onCadastrarUsuario = {
+                        navController.navigate(
+                            Screen.RegisterUser.route
+                        )
+                    },
                     onVoltar = {
                         navController.popBackStack()
                     }
@@ -410,6 +518,29 @@ fun AppNavHost(tokenProvider: TokenManager) {
                             }
                         }
                     }
+                )
+            }
+        }
+////Gerencia cargos
+        composable(Screen.ManageRoles.route) {
+
+            val roleViewModel: RoleViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        val remoteDataSource =
+                            RoleRemoteDataSource(apolloClient)
+
+                        val repository =
+                            RoleRepository(remoteDataSource)
+
+                        RoleViewModel(repository)
+                    }
+                }
+            )
+
+            ContentPage(navController) {
+                ManageRolesScreen(
+                    viewModel = roleViewModel
                 )
             }
         }

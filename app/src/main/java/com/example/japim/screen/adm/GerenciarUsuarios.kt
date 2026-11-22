@@ -15,6 +15,7 @@ import com.example.japim.ui.theme.*
 
 @Composable
 fun GerenciarUsuarios(
+    onCadastrarUsuario: () -> Unit = {},
     onVoltar: () -> Unit = {}
 ) {
     Column(
@@ -24,6 +25,7 @@ fun GerenciarUsuarios(
             .padding(30.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
@@ -34,6 +36,27 @@ fun GerenciarUsuarios(
             fontSize = 25.sp,
             textAlign = TextAlign.Center
         )
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        Button(
+            onClick = onCadastrarUsuario,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = SUCCESS
+            )
+        ) {
+            Text(
+                text = "+ Cadastrar Usuário",
+                color = FOURTH,
+                fontFamily = MPlus2,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
+        }
 
         Spacer(modifier = Modifier.height(30.dp))
 

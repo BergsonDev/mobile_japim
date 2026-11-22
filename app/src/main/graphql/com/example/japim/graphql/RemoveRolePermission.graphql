@@ -1,0 +1,10 @@
+mutation RemoveRolePermission($input: InputRolePermission!) {
+    removePermission(input: $input) {
+        id
+        name
+        permissions {
+            id
+            name
+        }
+    }
+}

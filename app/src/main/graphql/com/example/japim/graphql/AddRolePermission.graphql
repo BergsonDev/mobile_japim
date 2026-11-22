@@ -1,0 +1,10 @@
+mutation AddRolePermission($input: InputRolePermission!) {
+    addPermission(input: $input) {
+        id
+        name
+        permissions {
+            id
+            name
+        }
+    }
+}

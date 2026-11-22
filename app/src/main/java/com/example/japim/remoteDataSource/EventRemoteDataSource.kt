@@ -15,6 +15,8 @@ import com.apollographql.apollo.api.Optional
 import com.example.japim.graphql.ConfirmedPresenceByVolunteerMutation
 import com.example.japim.graphql.FinishEventMutation
 import com.example.japim.graphql.GetPresenceParticipantQuery
+import com.apollographql.apollo.api.ApolloResponse
+import kotlinx.coroutines.CancellationException
 
 class EventRemoteDataSource(private val apolloClient: ApolloClient) {
     suspend fun fetchEvents(): List<GetEventsQuery.Event?>? {    return try {
@@ -94,6 +96,22 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
             null
         }
+    }
+
+    suspend fun deleteEventOrThrow(
+        eventId: String
+    ): DeleteEventMutation.DeleteEvent {
+
+        val response = apolloClient
+            .mutation(DeleteEventMutation(eventId))
+            .execute()
+
+        validateResponse(response)
+
+        return response.data?.deleteEvent
+            ?: throw IllegalStateException(
+                "Não foi possível excluir o evento."
+            )
     }
 
     suspend fun createEvent(
@@ -269,6 +287,41 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             )
             null
         }
+    }
+
+    private fun validateResponse(response: ApolloResponse<*>) {
+
+        response.exception?.let {
+            throw it
+        }
+
+        if (response.hasErrors()) {
+            throw IllegalStateException(
+                response.errors?.firstOrNull()?.message
+                    ?: "Erro ao executar operação GraphQL."
+            )
+        }
+
+        if (response.data == null) {
+            throw IllegalStateException(
+                "Nenhum dado retornado pelo servidor."
+            )
+        }
+    }
+
+    suspend fun getEventsOrThrow(): List<GetEventsQuery.Event> {
+
+        val response = apolloClient
+            .query(GetEventsQuery())
+            .execute()
+
+        validateResponse(response)
+
+        return response.data?.events
+            ?.filterNotNull()
+            ?: throw IllegalStateException(
+                "Não foi possível carregar os eventos."
+            )
     }
 
 }
