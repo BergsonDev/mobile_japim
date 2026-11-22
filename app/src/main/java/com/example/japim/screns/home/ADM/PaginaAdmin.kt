@@ -1,5 +1,4 @@
-
-package com.example.japim
+package com.example.japim.screns.home.ADM
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -54,7 +53,7 @@ fun PaginaAdmin(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        BotaoAdmin("Cadastrar Usuário", onCadastrarUsuario)
+        BotaoAdmin("Cadastrar Admin", onCadastrarUsuario)
 
         Spacer(modifier = Modifier.height(16.dp))
 

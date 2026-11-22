@@ -1,0 +1,11 @@
+query MyCertificates {
+    myCertificates {
+        id
+        date_generated
+        event {
+            id
+            name
+            short_description
+        }
+    }
+}

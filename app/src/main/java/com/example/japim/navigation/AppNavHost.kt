@@ -1,5 +1,4 @@
-
-package com.example.japim
+package com.example.japim.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -19,7 +18,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
-import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListScreen
@@ -28,10 +26,22 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import com.example.japim.ADM.CadastroAdm
-import com.example.japim.ADM.GerenciarUsuarios
+import com.example.japim.screns.home.ADM.CadastroAdm
+import com.example.japim.screns.home.ADM.GerenciarUsuarios
+import com.example.japim.screns.home.Cadastro
+import com.example.japim.EventFormData
+import com.example.japim.screns.home.EventosQueParticipo
+import com.example.japim.GerenciarEventos
+import com.example.japim.screns.home.Login
+import com.example.japim.screns.home.MeusCertificados
+import com.example.japim.screns.home.ADM.PaginaAdmin
+import com.example.japim.RegisterEvent
+import com.example.japim.screns.home.StarterPage
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
+import com.example.japim.toEventFormData
+import com.example.japim.toEventInputCreate
+import com.example.japim.toEventInputUpdate
 
 
 @Composable
@@ -44,13 +54,13 @@ private fun ContentPage(
             navController.navigate(Screen.Events.route)
         },
         onNavigateToAdmin = {
-            navController.navigate("pagina_admin")
+            navController.navigate(Screen.Admin.route)
         },
         onNavigateToCertificates = {
-            navController.navigate("meus_certificados")
+            navController.navigate(Screen.MyCertificates.route)
         },
         onNavigateToParticipatingEvents = {
-            navController.navigate("eventos_que_participo")
+            navController.navigate(Screen.ParticipatingEvents.route)
         },
         contentPage = { paddingInterno ->
             Box(
@@ -150,7 +160,8 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 ContentPage(navController) {
                     EventDetailScreen(
                         tokenProvider = tokenProvider,
-                        event_id = eventId)
+                        event_id = eventId
+                    )
                 }
             }
         }
@@ -161,10 +172,10 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 EventListScreen(
                     apolloClient = apolloClient,
                     onClickRegister = {
-                        navController.navigate("register_event")
+                        navController.navigate(Screen.RegisterEvent.route)
                     },
                     onClickUpdate = { eventId ->
-                        navController.navigate("register_event/$eventId")
+                        navController.navigate(Screen.UpdateEvent.createRoute(eventId))
                     }
                 )
             }
@@ -172,54 +183,54 @@ fun AppNavHost(tokenProvider: TokenManager) {
 
 
 // CRIAÇÃO DE EVENTO
-        composable(route = "register_event") {
+        composable(route = Screen.RegisterEvent.route) {
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
-                ContentPage(navController) {
-                    RegisterEvent(
-                        onVoltar = {
-                            navController.popBackStack()
-                        },
-                        onSalvar = { dados ->
-                            scope.launch {
-                                try {
-                                    val input = dados.toEventInputCreate()
+            ContentPage(navController) {
+                RegisterEvent(
+                    onVoltar = {
+                        navController.popBackStack()
+                    },
+                    onSalvar = { dados ->
+                        scope.launch {
+                            try {
+                                val input = dados.toEventInputCreate()
 
-                                    val eventoCriado =
-                                        eventRemoteDataSource.createEvent(input)
+                                val eventoCriado =
+                                    eventRemoteDataSource.createEvent(input)
 
-                                    if (eventoCriado != null) {
-                                        Toast.makeText(
-                                            context,
-                                            "Evento criado com sucesso!",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-
-                                        navController.popBackStack()
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            "Não foi possível criar o evento. Verifique os dados e tente novamente.",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                } catch (e: Exception) {
+                                if (eventoCriado != null) {
                                     Toast.makeText(
                                         context,
-                                        "Erro ao criar evento: ${e.message}",
+                                        "Evento criado com sucesso!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                    navController.popBackStack()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Não foi possível criar o evento. Verifique os dados e tente novamente.",
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao criar evento: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
                         }
-                    )
+                    }
+                )
             }
         }
 
         // EDIÇÃO DE EVENTO
         composable(
-            route = "register_event/{event_id}",
+            route = Screen.UpdateEvent.route,
             arguments = listOf(
                 navArgument("event_id") {
                     type = NavType.StringType
@@ -311,43 +322,50 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             }
         }
-    ////PAGINA ADM
-        composable("pagina_admin") {
-            PaginaAdmin(
-                onGerenciarUsuarios = {
-                    navController.navigate("gerenciar_usuarios")
-                },
-                onCadastrarUsuario = {
-                    navController.navigate("cadastro_adm")
-                },
-                onGerenciarEventos = {
-                    navController.navigate("gerenciar_eventos")
-                },
-                onVoltar = {
-                    navController.popBackStack()
-                }
-            )
+        ////PAGINA ADM
+        composable(Screen.Admin.route) {
+            ContentPage(navController) {
+                PaginaAdmin(
+                    onGerenciarUsuarios = {
+                        navController.navigate(Screen.ManageUsers.route)
+                    },
+                    onCadastrarUsuario = {
+                        navController.navigate(Screen.RegisterAdmin.route)
+                    },
+                    onGerenciarEventos = {
+                        navController.navigate(Screen.ManageEvents.route)
+                    },
+                    onVoltar = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
-    ////CADASTRO ADM
-        composable("cadastro_adm") {
-            CadastroAdm(
-                onVoltar = {
-                    navController.popBackStack()
-                },
-                tokenProvider = tokenProvider
-            )
+        ////CADASTRO ADM
+        composable(Screen.RegisterAdmin.route) {
+            ContentPage(navController) {
+                CadastroAdm(
+                    onVoltar = {
+                        navController.popBackStack()
+                    },
+                    tokenProvider = tokenProvider
+                )
+            }
         }
-    ////GERENCIAR USUARIOS
-        composable("gerenciar_usuarios") {
-            GerenciarUsuarios(
-                onVoltar = {
-                    navController.popBackStack()
-                }
-            )
+        ////GERENCIAR USUARIOS
+        composable(Screen.ManageUsers.route) {
+            ContentPage(navController) {
+                GerenciarUsuarios(
+                    onVoltar = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
+
 ////GERENCIAR EVENTOS
-        composable("gerenciar_eventos") {
+        composable(Screen.ManageEvents.route) {
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
@@ -355,50 +373,51 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 mutableStateOf(0)
             }
 
+            ContentPage(navController) {
+                GerenciarEventos(
+                    tokenProvider = tokenProvider,
+                    atualizarLista = atualizarLista,
+                    onEditarEvento = { eventId ->
+                        navController.navigate(Screen.UpdateEvent.createRoute(eventId))
+                    },
+                    onDeletarEvento = { eventId ->
+                        scope.launch {
+                            val resultado = eventRemoteDataSource.deleteEvent(eventId)
 
-            GerenciarEventos(
-                tokenProvider = tokenProvider,
-                atualizarLista = atualizarLista,
-                onEditarEvento = { eventId ->
-                    navController.navigate("register_event/$eventId")
-                },
-                onDeletarEvento = { eventId ->
-                    scope.launch {
-                        val resultado = eventRemoteDataSource.deleteEvent(eventId)
+                            if (resultado != null) {
+                                Toast.makeText(
+                                    context,
+                                    "Evento excluído com sucesso!",
+                                    Toast.LENGTH_LONG
+                                ).show()
 
-                        if (resultado != null) {
-                            Toast.makeText(
-                                context,
-                                "Evento excluído com sucesso!",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            atualizarLista++
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Não foi possível excluir o evento.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                atualizarLista++
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Não foi possível excluir o evento.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
 
         ////MEUS CERTIFICADOS
-        composable("meus_certificados") {
+        composable(Screen.MyCertificates.route) {
             ContentPage(navController) {
                 MeusCertificados()
             }
         }
 
         //// EVENTOS QUE PARTICIPO
-        composable("eventos_que_participo") {
+        composable(Screen.ParticipatingEvents.route) {
             ContentPage(navController) {
                 EventosQueParticipo()
             }
         }
-
     }
 }
+

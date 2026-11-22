@@ -1,5 +1,4 @@
-
-package com.example.japim
+package com.example.japim.screns.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

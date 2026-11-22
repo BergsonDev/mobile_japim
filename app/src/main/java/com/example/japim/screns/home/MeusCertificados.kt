@@ -1,5 +1,4 @@
-
-package com.example.japim
+package com.example.japim.screns.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,10 +23,7 @@ fun MeusCertificados(
 ) {
     var pesquisa by remember { mutableStateOf("") }
 
-    val certificados = listOf(
-        "Nome do Evento" to
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    )
+    val certificados = emptyList<Pair<String, String>>()
 
     val certificadosFiltrados = certificados.filter {
         it.first.contains(pesquisa, ignoreCase = true)

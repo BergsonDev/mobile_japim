@@ -17,7 +17,6 @@ import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.components.cards.GenerateCardCrud
 import com.example.japim.ui.components.search.GenerateSearchBar
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 
 @Composable
