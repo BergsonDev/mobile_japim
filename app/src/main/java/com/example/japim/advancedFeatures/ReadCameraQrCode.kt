@@ -12,11 +12,14 @@ class ReadCameraQrCode(
 
     private val scanner = BarcodeScanning.getClient()
     private var isScanning = true
+    private var lastScanTime = 0L
+    private val cooldownMillis = 3000L
 
     @ExperimentalGetImage
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
-        if (mediaImage != null && isScanning) {
+        val currentTime = System.currentTimeMillis()
+        if (mediaImage != null && isScanning && (currentTime - lastScanTime > cooldownMillis)) {
             val image = InputImage.fromMediaImage(
                 mediaImage,
                 imageProxy.imageInfo.rotationDegrees
@@ -26,9 +29,13 @@ class ReadCameraQrCode(
                 .addOnSuccessListener { barcodes ->
                     for (barcode in barcodes) {
                         barcode.rawValue?.let { rawContent ->
-                            if (isScanning) {
-                                isScanning = false // Trava para evitar leituras múltiplas consecutivas
-                                onQrCodeRead(rawContent) // Retorna o texto lido
+                            if (isScanning && (System.currentTimeMillis() - lastScanTime > cooldownMillis)) {
+                                lastScanTime = System.currentTimeMillis()
+                                isScanning = false
+                                onQrCodeRead(rawContent)
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    isScanning = true
+                                }, cooldownMillis)
                             }
                         }
                     }

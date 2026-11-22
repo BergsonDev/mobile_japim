@@ -81,6 +81,7 @@ fun EventDetailScreen(
     }
 
     event?.let {
+        val isVolunteer = it.volunteers?.any { volunteer -> volunteer?.id == currentUser.id } == true
         GenerateEventDetails(
             id=it.id,
             title = it.name,
@@ -92,10 +93,11 @@ fun EventDetailScreen(
             max_volunteers = it.max_volunteers,
             workload = it.workload,
             value = it.value,
-            it.in_event,
-            it.status_event.initialism,
-            currentUser.id,
-            currentUser.role.initialism,
+            in_event = it.in_event,
+            is_volunteer = isVolunteer,
+            status = it.status_event.initialism,
+            auth_id = currentUser.id,
+            auth_role = currentUser.role.initialism,
             onClickParticipant = {
                 coroutineScope.launch {
                     val result = eventRemoteDataSource.subscribeParticipant(event_id)
@@ -130,7 +132,7 @@ fun EventDetailScreen(
                 }
             },
 
-            {
+            onClickValidatePresence = {
                 onNavigateValidateRequestPresence(event_id)
             }
 

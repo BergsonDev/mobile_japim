@@ -1,11 +1,10 @@
 package com.example.japim.screen.events
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
+import android.util.Log
 import com.apollographql.apollo.ApolloClient
 import com.example.japim.advancedFeatures.CameraQrCodePreview
 import com.example.japim.advancedFeatures.DecryptionQrCodeContent
@@ -27,10 +26,21 @@ fun ValidateRequesterPresenceScreen(
 
     val codeDecript = remember { mutableStateOf<String?>(null) }
     val userName = remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
-    if (codeDecript.value != null){
-        LaunchedEffect(Unit) {
-            eventRemoteDataSource.validateRequesterPresenceCode(codeDecript.value.toString())
+    LaunchedEffect(codeDecript.value) {
+        val code = codeDecript.value
+        if (code != null) {
+            coroutineScope.launch {
+                val result = eventRemoteDataSource.validateRequesterPresenceCode(code)
+                if (result != null) {
+                    userName.value = "Validado: ${result.participant.name}"
+                    Log.d("ValidatePresence", "Presença validada para: ${result.participant.name}")
+                } else {
+                    userName.value = "Erro ao validar presença"
+                    Log.e("ValidatePresence", "Falha ao validar presença")
+                }
+            }
         }
     }
 
