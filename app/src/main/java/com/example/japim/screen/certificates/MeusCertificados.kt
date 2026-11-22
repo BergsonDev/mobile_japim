@@ -1,4 +1,4 @@
-package com.example.japim.screns.home
+package com.example.japim.screen.certificates
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,22 +15,22 @@ import com.example.japim.ui.components.search.GenerateSearchBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import com.example.japim.viewmodel.CertificateViewModel
 
 @Composable
-fun EventosQueParticipo(
-    onDetalhesEvento: (String) -> Unit = {},
-    onCancelarInscricao: (String) -> Unit = {}
+fun MeusCertificados(
+    viewModel: CertificateViewModel,
+    onBaixarCertificado: (String) -> Unit = {},
+    onVerCertificado: (String) -> Unit = {}
 ) {
     var pesquisa by remember { mutableStateOf("") }
 
-    // Dados temporários para montar a interface
-    val eventos = listOf(
-        "Nome do Evento" to
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    )
+    val certificados by viewModel.certificates.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    val eventosFiltrados = eventos.filter {
-        it.first.contains(pesquisa, ignoreCase = true)
+    val certificadosFiltrados = certificados.filter {
+        it.event.name.contains(pesquisa, ignoreCase = true)
     }
 
     Column(
@@ -40,11 +40,56 @@ fun EventosQueParticipo(
             .verticalScroll(rememberScrollState())
     ) {
         GenerateSearchBar(
-            placeholder = "Pesquisar eventos...",
+            placeholder = "Pesquisar certificados...",
             actionSearch = { pesquisa = it }
-        )
 
-        eventosFiltrados.forEachIndexed { index, evento ->
+        )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color.Yellow
+                    )
+                }
+            }
+
+            error != null -> {
+                Text(
+                    text = "Erro ao carregar certificados: $error",
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            certificados.isEmpty() -> {
+                Text(
+                    text = "Você ainda não possui certificados.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                )
+            }
+
+            certificadosFiltrados.isEmpty() -> {
+                Text(
+                    text = "Nenhum certificado encontrado.",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                )
+            }
+        }
+
+        certificadosFiltrados.forEach { certificado ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -59,9 +104,9 @@ fun EventosQueParticipo(
                         .fillMaxWidth()
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                )  {
                     Text(
-                        text = evento.first,
+                        text = certificado.event.name,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -69,10 +114,11 @@ fun EventosQueParticipo(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = evento.second,
-                        color = Color.Black
-                    )
+                        Text(
+                            text = certificado.event.short_description,
+                            color = Color.Black
+                        )
+
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -81,7 +127,7 @@ fun EventosQueParticipo(
                     ) {
                         Button(
                             onClick = {
-                                onDetalhesEvento(index.toString())
+                                onBaixarCertificado(certificado.id)
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
@@ -89,7 +135,7 @@ fun EventosQueParticipo(
                             )
                         ) {
                             Text(
-                                text = "Detalhes do Evento",
+                                text = "Baixar Certificado",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
@@ -99,7 +145,7 @@ fun EventosQueParticipo(
 
                         Button(
                             onClick = {
-                                onCancelarInscricao(index.toString())
+                                onVerCertificado(certificado.id)
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
@@ -107,7 +153,7 @@ fun EventosQueParticipo(
                             )
                         ) {
                             Text(
-                                text = "Cancelar Inscrição",
+                                text = "Ver Certificado",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
@@ -120,4 +166,3 @@ fun EventosQueParticipo(
         }
     }
 }
-

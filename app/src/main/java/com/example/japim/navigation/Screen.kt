@@ -22,6 +22,12 @@ sealed class Screen(val route: String) {
 
     // User
     object MyCertificates : Screen("my_certificates")
+
+    object CertificateDetails : Screen("certificate_details/{certificate_id}") {
+        fun createRoute(certificateId: String) =
+            "certificate_details/$certificateId"
+    }
+
     object ParticipatingEvents : Screen("participating_events")
 
     // Administration

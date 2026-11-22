@@ -26,17 +26,17 @@ import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import com.example.japim.screns.home.ADM.CadastroAdm
-import com.example.japim.screns.home.ADM.GerenciarUsuarios
-import com.example.japim.screns.home.Cadastro
+import com.example.japim.screen.adm.CadastroAdm
+import com.example.japim.screen.adm.GerenciarUsuarios
+import com.example.japim.screen.Cadastro
 import com.example.japim.EventFormData
-import com.example.japim.screns.home.EventosQueParticipo
+import com.example.japim.screen.events.EventosQueParticipo
 import com.example.japim.GerenciarEventos
-import com.example.japim.screns.home.Login
-import com.example.japim.screns.home.MeusCertificados
-import com.example.japim.screns.home.ADM.PaginaAdmin
+import com.example.japim.screen.Login
+import com.example.japim.screen.certificates.MeusCertificados
+import com.example.japim.screen.adm.PaginaAdmin
 import com.example.japim.RegisterEvent
-import com.example.japim.screns.home.StarterPage
+import com.example.japim.screen.home.StarterPage
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.toEventFormData
@@ -48,7 +48,10 @@ import com.example.japim.viewmodel.CertificateViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-
+import androidx.navigation.navArgument
+import androidx.compose.runtime.collectAsState
+import com.example.japim.screen.certificates.CertificateDetailScreen
+import com.example.japim.util.rememberCertificateDownload
 
 @Composable
 private fun ContentPage(
@@ -428,10 +431,89 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             )
 
+            val downloadCertificate = rememberCertificateDownload()
+
+            val certificates =
+                certificateViewModel.certificates.collectAsState().value
+
             ContentPage(navController) {
                 MeusCertificados(
-                    viewModel = certificateViewModel
+                    viewModel = certificateViewModel,
+
+                    onBaixarCertificado = { certificateId ->
+                        certificates.find {
+                            it.id == certificateId
+                        }?.let { certificate ->
+                            downloadCertificate(certificate)
+                        }
+                    },
+
+                    onVerCertificado = { certificateId ->
+                        navController.navigate(
+                            Screen.CertificateDetails.createRoute(
+                                certificateId
+                            )
+                        )
+                    }
                 )
+            }
+        }
+        composable(
+            route = Screen.CertificateDetails.route,
+            arguments = listOf(
+                navArgument("certificate_id") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+
+            val certificateId =
+                backStackEntry.arguments?.getString("certificate_id")
+
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(
+                    Screen.MyCertificates.route
+                )
+            }
+
+            val certificateViewModel: CertificateViewModel = viewModel(
+                viewModelStoreOwner = parentEntry
+            )
+
+            val certificates =
+                certificateViewModel.certificates.collectAsState().value
+
+            val isLoading =
+                certificateViewModel.isLoading.collectAsState().value
+
+            val certificate = certificates.find {
+                it.id == certificateId
+            }
+            val downloadCertificate = rememberCertificateDownload()
+
+            ContentPage(navController) {
+
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator()
+                    }
+
+                    certificate != null -> {
+                        CertificateDetailScreen(
+                            certificate = certificate,
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            onDownload = {
+                                downloadCertificate(certificate)
+                            }
+                        )
+                    }
+
+                    else -> {
+                        Text("Certificado não encontrado.")
+                    }
+                }
             }
         }
 

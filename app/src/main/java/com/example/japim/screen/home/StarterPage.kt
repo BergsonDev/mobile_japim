@@ -1,4 +1,4 @@
-package com.example.japim.screns.home
+package com.example.japim.screen.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column

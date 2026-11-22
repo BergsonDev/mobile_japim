@@ -1,4 +1,4 @@
-package com.example.japim.screns.home
+package com.example.japim.screen.events
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,22 +15,22 @@ import com.example.japim.ui.components.search.GenerateSearchBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import com.example.japim.viewmodel.CertificateViewModel
 
 @Composable
-fun MeusCertificados(
-    viewModel: CertificateViewModel,
-    onBaixarCertificado: (String) -> Unit = {},
-    onVerCertificado: (String) -> Unit = {}
+fun EventosQueParticipo(
+    onDetalhesEvento: (String) -> Unit = {},
+    onCancelarInscricao: (String) -> Unit = {}
 ) {
     var pesquisa by remember { mutableStateOf("") }
 
-    val certificados by viewModel.certificates.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    // Dados temporários para montar a interface
+    val eventos = listOf(
+        "Nome do Evento" to
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    )
 
-    val certificadosFiltrados = certificados.filter {
-        it.event.name.contains(pesquisa, ignoreCase = true)
+    val eventosFiltrados = eventos.filter {
+        it.first.contains(pesquisa, ignoreCase = true)
     }
 
     Column(
@@ -40,56 +40,11 @@ fun MeusCertificados(
             .verticalScroll(rememberScrollState())
     ) {
         GenerateSearchBar(
-            placeholder = "Pesquisar certificados...",
+            placeholder = "Pesquisar eventos...",
             actionSearch = { pesquisa = it }
-
         )
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = Color.Yellow
-                    )
-                }
-            }
 
-            error != null -> {
-                Text(
-                    text = "Erro ao carregar certificados: $error",
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
-            certificados.isEmpty() -> {
-                Text(
-                    text = "Você ainda não possui certificados.",
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                )
-            }
-
-            certificadosFiltrados.isEmpty() -> {
-                Text(
-                    text = "Nenhum certificado encontrado.",
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                )
-            }
-        }
-
-        certificadosFiltrados.forEach { certificado ->
+        eventosFiltrados.forEachIndexed { index, evento ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -104,9 +59,9 @@ fun MeusCertificados(
                         .fillMaxWidth()
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
-                )  {
+                ) {
                     Text(
-                        text = certificado.event.name,
+                        text = evento.first,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -114,11 +69,10 @@ fun MeusCertificados(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                        Text(
-                            text = certificado.event.short_description,
-                            color = Color.Black
-                        )
-
+                    Text(
+                        text = evento.second,
+                        color = Color.Black
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -127,7 +81,7 @@ fun MeusCertificados(
                     ) {
                         Button(
                             onClick = {
-                                onBaixarCertificado(certificado.id)
+                                onDetalhesEvento(index.toString())
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
@@ -135,7 +89,7 @@ fun MeusCertificados(
                             )
                         ) {
                             Text(
-                                text = "Baixar Certificado",
+                                text = "Detalhes do Evento",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
@@ -145,7 +99,7 @@ fun MeusCertificados(
 
                         Button(
                             onClick = {
-                                onVerCertificado(certificado.id)
+                                onCancelarInscricao(index.toString())
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
@@ -153,7 +107,7 @@ fun MeusCertificados(
                             )
                         ) {
                             Text(
-                                text = "Ver Certificado",
+                                text = "Cancelar Inscrição",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Center,
@@ -166,3 +120,4 @@ fun MeusCertificados(
         }
     }
 }
+
