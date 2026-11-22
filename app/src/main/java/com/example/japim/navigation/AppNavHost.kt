@@ -42,6 +42,12 @@ import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.toEventFormData
 import com.example.japim.toEventInputCreate
 import com.example.japim.toEventInputUpdate
+import com.example.japim.remoteDataSource.CertificateRemoteDataSource
+import com.example.japim.repository.CertificateRepository
+import com.example.japim.viewmodel.CertificateViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 
 
 @Composable
@@ -407,8 +413,25 @@ fun AppNavHost(tokenProvider: TokenManager) {
 
         ////MEUS CERTIFICADOS
         composable(Screen.MyCertificates.route) {
+
+            val certificateViewModel: CertificateViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        val remoteDataSource =
+                            CertificateRemoteDataSource(apolloClient)
+
+                        val repository =
+                            CertificateRepository(remoteDataSource)
+
+                        CertificateViewModel(repository)
+                    }
+                }
+            )
+
             ContentPage(navController) {
-                MeusCertificados()
+                MeusCertificados(
+                    viewModel = certificateViewModel
+                )
             }
         }
 

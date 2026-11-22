@@ -1,7 +1,5 @@
 package com.example.japim.remoteDataSource
 
-package com.example.japim.remoteDataSource
-
 import com.apollographql.apollo.ApolloClient
 import com.example.japim.graphql.MyCertificatesQuery
 
