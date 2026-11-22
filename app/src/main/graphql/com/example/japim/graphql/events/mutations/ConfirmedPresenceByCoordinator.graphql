@@ -1,0 +1,7 @@
+mutation ConfirmedPresenceByCoordinator($event_id : ID!, $volunteer_id : ID!){
+    confirmedPresenceByCoordinator(id:$event_id, volunteer_id: $volunteer_id){
+        id
+        name
+        in_event
+    }
+}

@@ -48,18 +48,18 @@ import androidx.compose.ui.Alignment
 import com.example.japim.ui.theme.SUCCESS
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.MPlus2
+import com.apollographql.apollo.ApolloClient
 
 
 
 @Composable
 fun EventListScreen(
+    apolloClient: ApolloClient,
     onClickRegister: () -> Unit,
     onClickUpdate: (String) -> Unit
 ) {
-    val eventRemoteDataSource = remember {
-        EventRemoteDataSource(
-            com.example.japim.apolloClient.apolloClient
-        )
+    val eventRemoteDataSource = remember(apolloClient) {
+        EventRemoteDataSource(apolloClient)
     }
 
     val coroutineScope = rememberCoroutineScope()

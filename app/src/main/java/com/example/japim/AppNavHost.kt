@@ -1,7 +1,9 @@
-
 package com.example.japim
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -10,35 +12,35 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
-import com.example.japim.navigation.Screen
-import com.example.japim.remoteDataSource.EventRemoteDataSource
-import com.example.japim.screen.events.EventDetailScreen
-import com.example.japim.screen.events.EventListScreen
-import com.example.japim.ui.components.GenerateHeader
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import com.example.japim.ADM.CadastroAdm
 import com.example.japim.ADM.GerenciarUsuarios
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
-
+import com.example.japim.navigation.Screen
+import com.example.japim.remoteDataSource.AuthRemoteDataSource
+import com.example.japim.remoteDataSource.EventRemoteDataSource
+import com.example.japim.screen.events.EventDetailScreen
+import com.example.japim.screen.events.EventListPresenceScreen
+import com.example.japim.screen.events.EventListScreen
+import com.example.japim.screen.events.RequesterPresenceScreen
+import com.example.japim.screen.events.ValidateRequesterPresenceScreen
+import com.example.japim.ui.components.GenerateHeader
+import com.example.japim.ui.theme.PRIMARY
 
 @Composable
-private fun ContentPage(
-    navController: NavController,
-    content: @Composable () -> Unit
-) {
+private fun ContentPage(navController: NavController, content: @Composable () -> Unit, tokenProvider: TokenManager) {
     GenerateHeader(
         onNavigateToEvents = {
             navController.navigate(Screen.Events.route)
@@ -46,20 +48,30 @@ private fun ContentPage(
         onNavigateToAdmin = {
             navController.navigate("pagina_admin")
         },
+        onNavigateToCertificates = {
+            navController.navigate("meus_certificados")
+        },
+        onNavigateToParticipatingEvents = {
+            navController.navigate("eventos_que_participo")
+        },
         contentPage = { paddingInterno ->
             Box(
                 modifier = Modifier.padding(paddingInterno)
             ) {
                 content()
             }
+        },
+        onExitAccount = {
+            tokenProvider.limparToken()
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
         }
     )
 }
 
-
 @Composable
 fun AppNavHost(tokenProvider: TokenManager) {
-
     val navController = rememberNavController()
 
     // Cria o Apollo Client utilizando o TokenManager
@@ -72,20 +84,50 @@ fun AppNavHost(tokenProvider: TokenManager) {
         EventRemoteDataSource(apolloClient)
     }
 
-
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = "splash"
     ) {
 
-        // LOGIN
-        composable("login") {
+        composable("splash") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = PRIMARY)
+            }
+
+            LaunchedEffect(Unit) {
+                val token = tokenProvider.getToken()
+                if (!token.isNullOrBlank()) {
+                    try {
+                        val client = generateApolloClient(tokenProvider)
+                        val authRemoteDataSource = AuthRemoteDataSource(client)
+                        val me = authRemoteDataSource.auth()
+                        if (me != null) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo("splash") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            return@LaunchedEffect
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AppNavHost", "Erro ao validar token", e)
+                    }
+                }
+                tokenProvider.limparToken()
+                navController.navigate(Screen.Login.route) {
+                    popUpTo("splash") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+
+        composable(Screen.Login.route) {
             Login(
                 tokenProvider = tokenProvider,
                 onCriarConta = {
-                    navController.navigate(
-                        Screen.RegisterAccount.route
-                    )
+                    navController.navigate(Screen.RegisterAccount.route)
                 },
                 onLoginSucesso = {
                     navController.navigate(Screen.Home.route) {
@@ -98,26 +140,30 @@ fun AppNavHost(tokenProvider: TokenManager) {
             )
         }
 
-        // TELA INICIAL
+        // Tela inicial do aplicativo
         composable(Screen.Home.route) {
-            ContentPage(navController) {
-                StarterPage(
-                    tokenProvider = tokenProvider,
-                    onNavigateToCadastro = {
-                        navController.navigate(
-                            Screen.RegisterAccount.route
-                        )
-                    },
-                    onNavigateToDetails = { eventId ->
-                        navController.navigate(
-                            Screen.EventDetails.createRoute(eventId)
-                        )
-                    }
-                )
-            }
+            ContentPage(
+                navController,
+                {
+                    StarterPage(
+                        tokenProvider = tokenProvider,
+                        onNavigateToCadastro = {
+                            navController.navigate(
+                                Screen.RegisterAccount.route
+                            )
+                        },
+                        onNavigateToDetails = { eventId ->
+                            navController.navigate(
+                                Screen.EventDetails.createRoute(eventId)
+                            )
+                        }
+                    )
+                },
+                tokenProvider
+            )
         }
 
-        // CADASTRO
+        // Tela de Cadastro
         composable(Screen.RegisterAccount.route) {
             Cadastro(
                 tokenProvider = tokenProvider,
@@ -136,40 +182,61 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             )
         ) { backStackEntry ->
-
-            val eventId = backStackEntry.arguments
-                ?.getString("event_id")
+            val eventId = backStackEntry.arguments?.getString("event_id")
 
             if (eventId != null) {
-                ContentPage(navController) {
-                    EventDetailScreen(
-                        tokenProvider = tokenProvider,
-                        event_id = eventId)
-                }
-            }
-        }
-
-        // LISTA DE EVENTOS
-        composable(Screen.Events.route) {
-            ContentPage(navController) {
-                EventListScreen(
-                    onClickRegister = {
-                        navController.navigate("register_event")
+                ContentPage(
+                    navController,
+                    {
+                        EventDetailScreen(
+                            tokenProvider = tokenProvider,
+                            event_id = eventId,
+                            onNavigateRequestPresence = { id ->
+                                navController.navigate(Screen.RequesterPresence.createRoute(id))
+                            },
+                            onNavigateValidateRequestPresence = { id ->
+                                navController.navigate(Screen.ValidateRequesterPresence.createRoute(id))
+                            },
+                            {id->
+                                navController.navigate(Screen.ListPresencesInEvent.createRoute(id))
+                            },
+                            {
+                                navController.popBackStack()
+                            }
+                        )
                     },
-                    onClickUpdate = { eventId ->
-                        navController.navigate("register_event/$eventId")
-                    }
+                    tokenProvider
                 )
             }
         }
 
+        // list of events
+        composable(Screen.Events.route) {
+            ContentPage(
+                navController,
+                {
+                    EventListScreen(
+                        apolloClient = apolloClient,
+                        onClickRegister = {
+                            navController.navigate("register_event")
+                        },
+                        onClickUpdate = { eventId ->
+                            navController.navigate("register_event/$eventId")
+                        }
+                    )
+                },
+                tokenProvider
+            )
+        }
 
-// CRIAÇÃO DE EVENTO
+        // CRIAÇÃO DE EVENTO
         composable(route = "register_event") {
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
-                ContentPage(navController) {
+            ContentPage(
+                navController,
+                {
                     RegisterEvent(
                         onVoltar = {
                             navController.popBackStack()
@@ -178,9 +245,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                             scope.launch {
                                 try {
                                     val input = dados.toEventInputCreate()
-
-                                    val eventoCriado =
-                                        eventRemoteDataSource.createEvent(input)
+                                    val eventoCriado = eventRemoteDataSource.createEvent(input)
 
                                     if (eventoCriado != null) {
                                         Toast.makeText(
@@ -207,7 +272,9 @@ fun AppNavHost(tokenProvider: TokenManager) {
                             }
                         }
                     )
-            }
+                },
+                tokenProvider
+            )
         }
 
         // EDIÇÃO DE EVENTO
@@ -219,14 +286,11 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             )
         ) { backStackEntry ->
-
-            val eventId = backStackEntry.arguments
-                ?.getString("event_id")
+            val eventId = backStackEntry.arguments?.getString("event_id")
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
             if (eventId != null) {
-
                 var dadosEvento by remember(eventId) {
                     mutableStateOf<EventFormData?>(null)
                 }
@@ -237,74 +301,75 @@ fun AppNavHost(tokenProvider: TokenManager) {
 
                 LaunchedEffect(eventId) {
                     carregando = true
-
-                    val evento = eventRemoteDataSource
-                        .fetchEventById(eventId)
-
+                    val evento = eventRemoteDataSource.fetchEventById(eventId)
                     dadosEvento = evento?.toEventFormData()
-
                     carregando = false
                 }
 
-                ContentPage(navController) {
-                    when {
-                        carregando -> {
-                            CircularProgressIndicator()
-                        }
+                ContentPage(
+                    navController,
+                    {
+                        when {
+                            carregando -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = PRIMARY)
+                                }
+                            }
 
-                        dadosEvento != null -> {
-                            RegisterEvent(
-                                eventId = eventId,
-                                dadosIniciais = dadosEvento,
-                                onVoltar = {
-                                    navController.popBackStack()
-                                },
-                                onSalvar = { dados ->
-                                    scope.launch {
-                                        try {
-                                            val input = dados.toEventInputUpdate(eventId)
+                            dadosEvento != null -> {
+                                RegisterEvent(
+                                    eventId = eventId,
+                                    dadosIniciais = dadosEvento,
+                                    onVoltar = {
+                                        navController.popBackStack()
+                                    },
+                                    onSalvar = { dados ->
+                                        scope.launch {
+                                            try {
+                                                val input = dados.toEventInputUpdate(eventId)
+                                                val eventoAtualizado = eventRemoteDataSource.updateEvent(input)
 
-                                            val eventoAtualizado =
-                                                eventRemoteDataSource.updateEvent(input)
+                                                if (eventoAtualizado != null) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Evento atualizado com sucesso!",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
 
-                                            if (eventoAtualizado != null) {
+                                                    navController.popBackStack()
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Não foi possível atualizar o evento.",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            } catch (e: Exception) {
                                                 Toast.makeText(
                                                     context,
-                                                    "Evento atualizado com sucesso!",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
-
-                                                navController.popBackStack()
-                                            } else {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Não foi possível atualizar o evento.",
+                                                    "Erro ao atualizar evento: ${e.message}",
                                                     Toast.LENGTH_LONG
                                                 ).show()
                                             }
-
-                                        } catch (e: Exception) {
-                                            Toast.makeText(
-                                                context,
-                                                "Erro ao atualizar evento: ${e.message}",
-                                                Toast.LENGTH_LONG
-                                            ).show()
                                         }
                                     }
-                                }
-                            )
-                        }
+                                )
+                            }
 
-                        else -> {
-                            Text(
-                                "Não foi possível carregar o evento."
-                            )
+                            else -> {
+                                Text("Não foi possível carregar o evento.")
+                            }
                         }
-                    }
-                }
+                    },
+                    tokenProvider
+                )
             }
         }
-    ////PAGINA ADM
+
+        // PAGINA ADM
         composable("pagina_admin") {
             PaginaAdmin(
                 onGerenciarUsuarios = {
@@ -321,7 +386,8 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 }
             )
         }
-    ////CADASTRO ADM
+
+        // CADASTRO ADM
         composable("cadastro_adm") {
             CadastroAdm(
                 onVoltar = {
@@ -330,7 +396,8 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 tokenProvider = tokenProvider
             )
         }
-    ////GERENCIAR USUARIOS
+
+        // GERENCIAR USUARIOS
         composable("gerenciar_usuarios") {
             GerenciarUsuarios(
                 onVoltar = {
@@ -339,7 +406,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
             )
         }
 
-////GERENCIAR EVENTOS
+        // GERENCIAR EVENTOS
         composable("gerenciar_eventos") {
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
@@ -348,35 +415,146 @@ fun AppNavHost(tokenProvider: TokenManager) {
                 mutableStateOf(0)
             }
 
-            GerenciarEventos(
-                tokenProvider = tokenProvider,
-                atualizarLista = atualizarLista,
-                onEditarEvento = { eventId ->
-                    navController.navigate("register_event/$eventId")
-                },
-                onDeletarEvento = { eventId ->
-                    scope.launch {
-                        val resultado = eventRemoteDataSource.deleteEvent(eventId)
+            ContentPage(
+                navController,
+                {
+                    GerenciarEventos(
+                        tokenProvider = tokenProvider,
+                        atualizarLista = atualizarLista,
+                        onEditarEvento = { eventId ->
+                            navController.navigate("register_event/$eventId")
+                        },
+                        onDeletarEvento = { eventId ->
+                            scope.launch {
+                                val resultado = eventRemoteDataSource.deleteEvent(eventId)
 
-                        if (resultado != null) {
-                            Toast.makeText(
-                                context,
-                                "Evento excluído com sucesso!",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                if (resultado != null) {
+                                    Toast.makeText(
+                                        context,
+                                        "Evento excluído com sucesso!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
 
-                            atualizarLista++
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Não foi possível excluir o evento.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                    atualizarLista++
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Não foi possível excluir o evento.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
                         }
-                    }
-                }
+                    )
+                },
+                tokenProvider
             )
         }
 
+        // MEUS CERTIFICADOS
+        composable("meus_certificados") {
+            ContentPage(
+                navController,
+                {
+                    MeusCertificados()
+                },
+                tokenProvider
+            )
+        }
+
+        // EVENTOS QUE PARTICIPO
+        composable("eventos_que_participo") {
+            ContentPage(
+                navController,
+                {
+                    EventosQueParticipo()
+                },
+                tokenProvider
+            )
+        }
+
+        // REQUESTER PRESENCE
+        composable(
+            route = Screen.RequesterPresence.route,
+            arguments = listOf(
+                navArgument("event_id") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("event_id")
+
+            if (eventId != null) {
+                ContentPage(
+                    navController,
+                    {
+                        RequesterPresenceScreen(
+                            tokenProvider = tokenProvider,
+                            onClickReturn = {
+                                navController.popBackStack()
+                            },
+                            event_id = eventId
+                        )
+                    },
+                    tokenProvider
+                )
+            }
+        }
+
+        // VALIDATE PRESENCE
+        composable(
+            route = Screen.ValidateRequesterPresence.route,
+            arguments = listOf(
+                navArgument("event_id") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getString("event_id")
+
+            if (eventId != null) {
+                ContentPage(
+                    navController,
+                    {
+                        ValidateRequesterPresenceScreen(
+                            tokenProvider = tokenProvider,
+                            onClickReturn = {
+                                navController.popBackStack()
+                            },
+                            event_id = eventId
+                        )
+                    },
+                    tokenProvider
+                )
+            }
+        }
+
+        //list of presences in event
+        composable(
+            Screen.ListPresencesInEvent.route,
+            arguments = listOf(
+                navArgument("event_id"){
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            backStackEntry->
+                val eventId = backStackEntry.arguments?.getString("event_id")
+                if(eventId != null){
+                    ContentPage(
+                        navController,
+                        {
+                            EventListPresenceScreen(
+                                eventId,
+                                tokenProvider,
+                                {
+                                    navController.popBackStack()
+                                }
+                            )
+                        },
+                        tokenProvider
+                    )
+                }
+        }
     }
 }

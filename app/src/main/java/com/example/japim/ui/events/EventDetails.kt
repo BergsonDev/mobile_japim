@@ -35,143 +35,130 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.japim.globalsFunctions.parseReal
-import com.example.japim.graphql.GetPresenceParticipantQuery
+import com.example.japim.graphql.GetParticipantPresenceInDayQuery
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.theme.MPlus2
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.SECONDARY
 import com.example.japim.ui.theme.SUCCESS
-import kotlinx.coroutines.coroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 
 
 private val FINISHED = "ENC"
-private val USER = "USE"
-private val VOLUNTEER = "VOL"
+private val ADMIN = "ADMIN"
+private val USER = "USER"
 private val STUDENT = "STU"
+private val COORD = "COORD"
+private val SPEAKER = "SPE"
+private val DIRECTOR = "DIR"
+
 private fun isFinished(status: String) : Boolean{
-    return FINISHED == status;
+    return FINISHED == status
 }
 
-private fun isParticipant(initialism : String) : Boolean{
-    return initialism in listOf(USER, VOLUNTEER, STUDENT);
+private fun isManagementOrStaff(role: String): Boolean {
+    return role in listOf(ADMIN, COORD, SPEAKER, DIRECTOR)
+}
+
+private fun isUserOrStudent(role: String): Boolean {
+    return role in listOf(USER, STUDENT)
 }
 @Composable
 private fun isConfirmedDay(event_id: String, participant_id: String) : Boolean{
     val context = LocalContext.current
     val tokenProvider = remember { TokenManager(context) }
     val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
-    var verifyParticipant by remember { mutableStateOf<GetPresenceParticipantQuery.ParticipantPresenceDay?>(null) }
+    var verifyParticipant by remember { mutableStateOf<GetParticipantPresenceInDayQuery.ParticipantPresenceInDay?>(null) }
     LaunchedEffect(Unit){
-        verifyParticipant = eventRemoteDataSource.participantPresenceDay(event_id,participant_id)
+        verifyParticipant = eventRemoteDataSource.participantPresenceInDay(event_id, participant_id, java.time.LocalDateTime.now())
     }
 
     return verifyParticipant != null
 }
 
+
 @Composable
-private fun GenerateCardEvent(
-    id : String,
-    total_participants : Int,
-    max_participants : Int,
-    total_volunteers : Int,
-    max_volunteers : Int,
-    workload : Int,
-    value : Double,
+private fun generateButton(
     in_event : Boolean,
+    is_volunteer: Boolean,
     status : String,
+    event_id: String,
     auth_id : String,
-    auth_role:  String,
-    onClickParticipant : ()-> Unit,
-    onClickVolunteer : ()-> Unit,
-    onClickPresence : ()-> Unit,
-    onClickFinishEvent : ()->Unit
-    ){
-    Card(
-        modifier = Modifier.fillMaxSize().padding(10.dp),
-        shape = RoundedCornerShape(0),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = SECONDARY.copy(0.4f),
-        )
-    ) {
+    auth_role : String,
+    onClickSubscribeParticipant: () -> Unit,
+    onClickSubscribeVolunteer: () -> Unit,
+    onClickRequesterPresence: () -> Unit,
+    onClickValidateRequesterPresence : ()->Unit,
+    onClickFinishEvent: ()-> Unit,
+    onClickRedirectListPresences: ()-> Unit
+){
+    // Management, coordinators, speakers, directors (ADMIN, COORD, SPE, DIR)
+    if (!isFinished(status) && isManagementOrStaff(auth_role)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-
+            Button(
+                onClick = onClickValidateRequesterPresence,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Participantes",
-                    tint = PRIMARY
-                )
-
-                Text("Participantes", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp, fontWeight = FontWeight.Bold);
-                Text("$total_participants/$max_participants", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
-
+                Text("Validar Presença")
             }
 
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-
+            Button(
+                onClick = onClickFinishEvent,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.SupportAgent,
-                    contentDescription = "Voluntários",
-                    tint = PRIMARY
-                )
-
-                Text("Voluntários", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp, fontWeight = FontWeight.Bold);
-                Text("$total_volunteers/$max_volunteers", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
-            }
-
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreTime,
-                    contentDescription = "Carga Horária",
-                    tint = PRIMARY
-                )
-
-                Text("Carga Horária", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
-                Text("$workload", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
-            }
-
-
-            if(value != 0.0){
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-
-                ) {
-
-                    Icon(
-                        imageVector = Icons.Default.Paid,
-                        contentDescription = "Valor",
-                        tint = PRIMARY
-                    )
-
-                    Text("Valor", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
-                    Text("R$ ${value.parseReal()}", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
-                }
+                Text("Finalizar Evento")
             }
         }
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            Button(
+                onClick = onClickRedirectListPresences,
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 4.dp,
+                    pressedElevation = 10.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SUCCESS
+                ),
+                shape = RoundedCornerShape(5.dp)
+            ) {
+                Text("Fazer Chamada")
+            }
+        }
+        return
+    }
 
-        if(!in_event && !isFinished(status)){
+    // Users and Students (USER, STU)
+    if (isUserOrStudent(auth_role)) {
+        // Not subscribed and event not finished
+        if (!in_event && !isFinished(status)) {
             Row(
                 Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Button(
-                    onClick = onClickParticipant,
+                    onClick = onClickSubscribeParticipant,
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
                         pressedElevation = 10.dp
@@ -185,7 +172,7 @@ private fun GenerateCardEvent(
                 }
 
                 Button(
-                    onClick = onClickVolunteer,
+                    onClick = onClickSubscribeVolunteer,
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
                         pressedElevation = 10.dp
@@ -197,16 +184,18 @@ private fun GenerateCardEvent(
                 ) {
                     Text("Ser Voluntário")
                 }
-
             }
-        }else if(!isFinished(status) && !isConfirmedDay(id, auth_id) && isParticipant(auth_role) ){
+            return
+        }
+
+        // Event finished -> Generate Certificate
+        if (isFinished(status)) {
             Row(
                 Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.Center
-            ){
-
+            ) {
                 Button(
-                    onClick = onClickPresence,
+                    onClick = { },
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,
                         pressedElevation = 10.dp
@@ -216,35 +205,177 @@ private fun GenerateCardEvent(
                     ),
                     shape = RoundedCornerShape(5.dp)
                 ) {
-                    Text("Solicitar Presença")
+                    Text("Gerar Certificado")
                 }
             }
-        }else if(!isFinished(status)){
-            Row(
-                Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center
-            ){
+            return
+        }
 
-                Button(
-                    onClick = onClickFinishEvent,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 10.dp
-                    ),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = SUCCESS
-                    ),
-                    shape = RoundedCornerShape(5.dp)
+        // Subscribed and event not finished
+        if (in_event && !isFinished(status) && !isConfirmedDay(event_id, auth_id)) {
+            if (is_volunteer) {
+                // Volunteer can both request presence and validate presence of participants
+                Row(
+                    Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Text("Finalizar Evento")
+                    Button(
+                        onClick = onClickRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Solicitar Presença")
+                    }
+
+                    Button(
+                        onClick = onClickValidateRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Validar Presença")
+                    }
+                }
+            } else {
+                // Participant only can request presence
+                Row(
+                    Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = onClickRequesterPresence,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 4.dp,
+                            pressedElevation = 10.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SUCCESS
+                        ),
+                        shape = RoundedCornerShape(5.dp)
+                    ) {
+                        Text("Solicitar Presença")
+                    }
+                }
+            }
+            return
+        }
+    }
+}
+@Composable
+private fun GenerateCardEvent(
+    id : String,
+    total_participants : Int,
+    max_participants : Int,
+    total_volunteers : Int,
+    max_volunteers : Int,
+    workload : Int,
+    value : Double,
+    in_event : Boolean,
+    is_volunteer: Boolean,
+    status : String,
+    auth_id : String,
+    auth_role:  String,
+    onClickParticipant : ()-> Unit,
+    onClickVolunteer : ()-> Unit,
+    onClickPresence : ()-> Unit,
+    onClickFinishEvent : ()->Unit,
+    onClickValidatePresence : ()-> Unit,
+    onClickRedirectListPresences : ()-> Unit
+){
+    Card(
+        modifier = Modifier.fillMaxSize().padding(10.dp),
+        shape = RoundedCornerShape(0),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = SECONDARY.copy(0.4f),
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Participantes",
+                    tint = PRIMARY
+                )
+
+                Text("Participantes", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp, fontWeight = FontWeight.Bold);
+                Text("$total_participants/$max_participants", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SupportAgent,
+                    contentDescription = "Voluntários",
+                    tint = PRIMARY
+                )
+
+                Text("Voluntários", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp, fontWeight = FontWeight.Bold);
+                Text("$total_volunteers/$max_volunteers", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreTime,
+                    contentDescription = "Carga Horária",
+                    tint = PRIMARY
+                )
+
+                Text("Carga Horária", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
+                Text("$workload", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
+            }
+
+            if(value != 0.0){
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Paid,
+                        contentDescription = "Valor",
+                        tint = PRIMARY
+                    )
+
+                    Text("Valor", color= PRIMARY, fontFamily = MPlus2, fontSize = 13.sp,fontWeight = FontWeight.Bold);
+                    Text("R$ ${value.parseReal()}", color= PRIMARY, fontFamily = MPlus2, fontSize = 15.sp);
                 }
             }
         }
 
-
-
+        generateButton(
+            in_event,
+            is_volunteer,
+            status,
+            id,
+            auth_id,
+            auth_role,
+            onClickParticipant,
+            onClickVolunteer,
+            onClickPresence,
+            onClickValidatePresence,
+            onClickFinishEvent,
+            onClickRedirectListPresences
+        )
     }
 }
+
 @Composable
 fun GenerateEventDetails(
     id: String,
@@ -258,6 +389,7 @@ fun GenerateEventDetails(
     workload: Int,
     value: Double,
     in_event: Boolean,
+    is_volunteer: Boolean,
     status: String,
     auth_id : String,
     auth_role: String,
@@ -265,6 +397,8 @@ fun GenerateEventDetails(
     onClickVolunteer: () -> Unit,
     onClickPresence: ()-> Unit,
     onClickFinishEvent: () -> Unit,
+    onClickValidatePresence : ()-> Unit,
+    onClickRedirectListPresences : ()->Unit,
 ){
     Column(
         modifier = Modifier.fillMaxHeight(.9f).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(10.dp)).background(SECONDARY).padding(vertical = 12.dp).verticalScroll(rememberScrollState()),
@@ -303,15 +437,16 @@ fun GenerateEventDetails(
             workload,
             value,
             in_event,
+            is_volunteer,
             status,
             auth_id,
             auth_role,
             onClickParticipant,
             onClickVolunteer,
             onClickPresence,
-            onClickFinishEvent
+            onClickFinishEvent,
+            onClickValidatePresence,
+            onClickRedirectListPresences
         );
-
     }
-
 }

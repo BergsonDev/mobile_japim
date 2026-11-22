@@ -5,6 +5,9 @@ import com.apollographql.apollo.ApolloClient
 import com.example.japim.graphql.DeleteEventMutation
 import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.graphql.GetEventsQuery
+import com.example.japim.graphql.GetParticipantPresenceInDayQuery
+import java.time.LocalDateTime
+import com.example.japim.graphql.RequesterPresenceCodeMutation
 import com.example.japim.graphql.SubscribeParticipantMutation
 import com.example.japim.graphql.SubscribeVolunteerMutation
 import com.example.japim.graphql.CreateEventMutation
@@ -12,31 +15,34 @@ import com.example.japim.graphql.UpdateEventMutation
 import com.example.japim.graphql.type.EventInputCreate
 import com.example.japim.graphql.type.EventInputUpdate
 import com.apollographql.apollo.api.Optional
+import com.example.japim.graphql.ConfirmedPresenceByCoordinatorMutation
 import com.example.japim.graphql.ConfirmedPresenceByVolunteerMutation
 import com.example.japim.graphql.FinishEventMutation
-import com.example.japim.graphql.GetPresenceParticipantQuery
+import com.example.japim.graphql.RemoveConfirmedPresenceByCoordinatorMutation
+import com.example.japim.graphql.RemoveConfirmedPresenceByVolunteerMutation
+import com.example.japim.graphql.ValidateRequesterPresenceCodeMutation
 
 class EventRemoteDataSource(private val apolloClient: ApolloClient) {
-    suspend fun fetchEvents(): List<GetEventsQuery.Event?>? {    return try {
-        val response = apolloClient.query(GetEventsQuery()).execute()
-
-        if (response.hasErrors()) {
-            Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
-        } else {
-            Log.d("APOLLO_TEST", "Sucesso: ${response.data}")
-        }
-
-        response.data?.events
-    } catch (e: Exception) {
-        // Imprime o erro exato no Logcat (ex: Conexão recusada, Timeout, Host desconhecido)
-        Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
-        null
-    }
-    }
-
-    suspend fun fetchEventById(id : String) : GetEventByIdQuery.Event? {
+    suspend fun fetchEvents(): List<GetEventsQuery.Event?>? {
         return try {
-            val response = apolloClient.query(GetEventByIdQuery(id)).execute();
+            val response = apolloClient.query(GetEventsQuery()).execute()
+
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            } else {
+                Log.d("APOLLO_TEST", "Sucesso: ${response.data}")
+            }
+
+            response.data?.events
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
+
+    suspend fun fetchEventById(id: String): GetEventByIdQuery.Event? {
+        return try {
+            val response = apolloClient.query(GetEventByIdQuery(id)).execute()
 
             if (response.hasErrors()) {
                 Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
@@ -49,9 +55,9 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
         }
     }
 
-    suspend fun subscribeParticipant(event_id : String) : SubscribeParticipantMutation.SubscribeParticipant? {
+    suspend fun subscribeParticipant(event_id: String): SubscribeParticipantMutation.SubscribeParticipant? {
         return try {
-            val response = apolloClient.mutation(SubscribeParticipantMutation(event_id)).execute();
+            val response = apolloClient.mutation(SubscribeParticipantMutation(event_id)).execute()
 
             if (response.hasErrors()) {
                 Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
@@ -62,12 +68,11 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
             null
         }
-
     }
 
-    suspend fun subscribeVolunteer(event_id : String) : SubscribeVolunteerMutation.SubscribeVolunteer? {
+    suspend fun subscribeVolunteer(event_id: String): SubscribeVolunteerMutation.SubscribeVolunteer? {
         return try {
-            val response = apolloClient.mutation(SubscribeVolunteerMutation(event_id)).execute();
+            val response = apolloClient.mutation(SubscribeVolunteerMutation(event_id)).execute()
 
             if (response.hasErrors()) {
                 Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
@@ -78,12 +83,11 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
             null
         }
-
     }
 
-    suspend fun deleteEvent(event_id : String) : DeleteEventMutation.DeleteEvent ? {
+    suspend fun deleteEvent(event_id: String): DeleteEventMutation.DeleteEvent? {
         return try {
-            val response = apolloClient.mutation(DeleteEventMutation(event_id)).execute();
+            val response = apolloClient.mutation(DeleteEventMutation(event_id)).execute()
 
             if (response.hasErrors()) {
                 Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
@@ -119,7 +123,6 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
                     "APOLLO_EVENT",
                     "Evento criado: ${response.data?.createEvent?.id}"
                 )
-
                 response.data?.createEvent
             }
         } catch (e: Exception) {
@@ -131,10 +134,10 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             null
         }
     }
+
     suspend fun updateEvent(
         input: EventInputUpdate
     ): UpdateEventMutation.UpdateEvent? {
-
         return try {
             val response = apolloClient
                 .mutation(
@@ -155,10 +158,8 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
                     "APOLLO_EVENT",
                     "Evento atualizado com sucesso"
                 )
-
                 response.data?.updateEvent
             }
-
         } catch (e: Exception) {
             Log.e(
                 "APOLLO_EVENT",
@@ -182,28 +183,18 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
             ).execute()
 
             if (response.hasErrors()) {
-                Log.e(
-                    "APOLLO_PRESENCE",
-                    "Erro ao confirmar presença: ${response.errors}"
-                )
-                null
-            } else {
-                Log.d(
-                    "APOLLO_PRESENCE",
-                    "Presença confirmada com sucesso"
-                )
-                response.data?.confirmedPresenceByVolunteer
+                val errorMsg = response.errors?.firstOrNull()?.message ?: "Erro ao confirmar presença"
+                Log.e("APOLLO_PRESENCE", "Erro ao confirmar presença: $errorMsg")
+                throw RuntimeException(errorMsg)
             }
+
+            Log.d("APOLLO_PRESENCE", "Presença confirmada com sucesso")
+            response.data?.confirmedPresenceByVolunteer
         } catch (e: Exception) {
-            Log.e(
-                "APOLLO_PRESENCE",
-                "Falha ao confirmar presença",
-                e
-            )
-            null
+            Log.e("APOLLO_PRESENCE", "Falha ao confirmar presença", e)
+            throw e
         }
     }
-
 
     suspend fun finishEvent(
         id: String
@@ -236,39 +227,144 @@ class EventRemoteDataSource(private val apolloClient: ApolloClient) {
         }
     }
 
-    suspend fun participantPresenceDay(
+    suspend fun participantPresenceInDay(
         eventId: String,
-        participantId: String
-    ): GetPresenceParticipantQuery.ParticipantPresenceDay? {
+        memberId: String,
+        datePresence: LocalDateTime
+    ): GetParticipantPresenceInDayQuery.ParticipantPresenceInDay? {
         return try {
             val response = apolloClient.query(
-                GetPresenceParticipantQuery(
+                GetParticipantPresenceInDayQuery(
                     id = eventId,
-                    participant_id = participantId
+                    participant_id = memberId,
+                    date_presence = datePresence
                 )
             ).execute()
 
             if (response.hasErrors()) {
                 Log.e(
                     "APOLLO_PRESENCE",
-                    "Erro ao consultar presença: ${response.errors}"
+                    "Erro ao consultar presença no dia: ${response.errors}"
                 )
                 null
             } else {
                 Log.d(
                     "APOLLO_PRESENCE",
-                    "Consulta de presença realizada com sucesso"
+                    "Consulta de presença no dia realizada com sucesso"
                 )
-                response.data?.participantPresenceDay
+                response.data?.participantPresenceInDay
             }
         } catch (e: Exception) {
             Log.e(
                 "APOLLO_PRESENCE",
-                "Falha ao consultar presença",
+                "Falha ao consultar presença no dia",
                 e
             )
             null
         }
     }
 
+    suspend fun requesterPresenceCode(id: String): RequesterPresenceCodeMutation.RequesterPresenceCode? {
+        return try {
+            val response = apolloClient.mutation(RequesterPresenceCodeMutation(id)).execute()
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            }
+            response.data?.requesterPresenceCode
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
+
+    suspend fun validateRequesterPresenceCode(code: String): ValidateRequesterPresenceCodeMutation.ValidateRequesterPresenceCode? {
+        return try {
+            val response = apolloClient.mutation(ValidateRequesterPresenceCodeMutation(code)).execute()
+            if (response.hasErrors()) {
+                Log.e("APOLLO_TEST", "Erros GraphQL: ${response.errors}")
+            }
+            response.data?.validateRequesterPresenceCode
+        } catch (e: Exception) {
+            Log.e("APOLLO_TEST", "Falha ao executar requisição GraphQL", e)
+            null
+        }
+    }
+
+    suspend fun confirmedPresenceByCoordinator(
+        id: String,
+        volunteerId: String
+    ): ConfirmedPresenceByCoordinatorMutation.ConfirmedPresenceByCoordinator? {
+        return try {
+            val response = apolloClient.mutation(
+                ConfirmedPresenceByCoordinatorMutation(
+                    event_id = id,
+                    volunteer_id = volunteerId
+                )
+            ).execute()
+
+            if (response.hasErrors()) {
+                val errorMsg = response.errors?.firstOrNull()?.message ?: "Erro ao confirmar presença"
+                Log.e("APOLLO_PRESENCE", "Erro ao confirmar presença: $errorMsg")
+                throw RuntimeException(errorMsg)
+            }
+
+            Log.d("APOLLO_PRESENCE", "Presença confirmada com sucesso")
+            response.data?.confirmedPresenceByCoordinator
+        } catch (e: Exception) {
+            Log.e("APOLLO_PRESENCE", "Falha ao confirmar presença", e)
+            throw e
+        }
+    }
+
+    suspend fun removeConfirmedPresenceByVolunteer(
+        id: String,
+        participantId: String
+    ): RemoveConfirmedPresenceByVolunteerMutation.RemoveConfirmedPresenceByVolunteer? {
+        return try {
+            val response = apolloClient.mutation(
+                RemoveConfirmedPresenceByVolunteerMutation(
+                    event_id = id,
+                    participant_id = participantId
+                )
+            ).execute()
+
+            if (response.hasErrors()) {
+                val errorMsg = response.errors?.firstOrNull()?.message ?: "Erro ao remover a confirmação da presença"
+                Log.e("APOLLO_PRESENCE", "Erro ao remover a confirmação da  presença: $errorMsg")
+                throw RuntimeException(errorMsg)
+            }
+
+            Log.d("APOLLO_PRESENCE", "Presença confirmada removida com sucesso")
+            response.data?.removeConfirmedPresenceByVolunteer
+        } catch (e: Exception) {
+            Log.e("APOLLO_PRESENCE", "Falha ao remover a confirmação da presença", e)
+            throw e
+        }
+    }
+
+    suspend fun removeConfirmedPresenceByCoordinator(
+        id: String,
+        volunteerId: String
+    ): RemoveConfirmedPresenceByCoordinatorMutation.RemoveConfirmedPresenceByCoordinator? {
+        return try {
+            val response = apolloClient.mutation(
+                RemoveConfirmedPresenceByCoordinatorMutation(
+                    event_id = id,
+                    volunteer_id = volunteerId
+                )
+            ).execute()
+
+            if (response.hasErrors()) {
+                val errorMsg = response.errors?.firstOrNull()?.message ?: "Erro ao remover a confirmação da presença"
+                Log.e("APOLLO_PRESENCE", "Erro ao remover a confirmação da  presença: $errorMsg")
+                throw RuntimeException(errorMsg)
+            }
+
+            Log.d("APOLLO_PRESENCE", "Presença confirmada removida com sucesso")
+            response.data?.removeConfirmedPresenceByCoordinator
+        } catch (e: Exception) {
+            Log.e("APOLLO_PRESENCE", "Falha ao remover a confirmação da presença", e)
+            throw e
+        }
+    }
 }
