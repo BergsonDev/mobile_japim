@@ -67,14 +67,18 @@ fun EventDetailScreen(
     var event by remember { mutableStateOf<GetEventByIdQuery.Event?>(null) }
     var isEventLoading by remember { mutableStateOf(true) }
 
+    suspend fun fetchEventData() {
+        event = eventRemoteDataSource.fetchEventById(event_id)
+        isEventLoading = false
+    }
+
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             auth = authRemoteDataSource.auth()
             isAuthLoading = false
         }
         coroutineScope.launch {
-            event = eventRemoteDataSource.fetchEventById(event_id)
-            isEventLoading = false
+            fetchEventData()
         }
     }
 
@@ -165,6 +169,7 @@ fun EventDetailScreen(
                         val result = eventRemoteDataSource.subscribeParticipant(event_id)
                         if (result != null) {
                             Log.d("Subscribe", "Inscrição realizada com sucesso: ${result.id}")
+                            fetchEventData()
                         } else {
                             Log.e("Subscribe", "Falha ao se inscrever")
                         }
@@ -173,8 +178,9 @@ fun EventDetailScreen(
                 onClickVolunteer = {
                     coroutineScope.launch {
                         val result = eventRemoteDataSource.subscribeVolunteer(event_id)
-                        if(result != null){
-                            Log.d("Subscribe", "Inscrição realizada como voluntário realizado com sucesso: ${result.id}")
+                        if (result != null) {
+                            Log.d("Subscribe", "Inscrição realizada como voluntário com sucesso: ${result.id}")
+                            fetchEventData()
                         } else {
                             Log.e("Subscribe", "Falha ao se inscrever")
                         }
@@ -186,8 +192,9 @@ fun EventDetailScreen(
                 onClickFinishEvent = {
                     coroutineScope.launch {
                         val result = eventRemoteDataSource.finishEvent(it.id)
-                        if(result != null){
+                        if (result != null) {
                             Log.d("Presence", "Evento Finalizado com sucesso: ${result.id}")
+                            fetchEventData()
                         } else {
                             Log.e("Presence", "Falha ao Finalizar o evento")
                         }
