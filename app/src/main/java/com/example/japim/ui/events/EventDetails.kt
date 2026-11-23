@@ -72,7 +72,7 @@ private fun isConfirmedDay(event_id: String, participant_id: String) : Boolean{
     val eventRemoteDataSource = remember { EventRemoteDataSource(generateApolloClient(tokenProvider)) }
     var verifyParticipant by remember { mutableStateOf<GetParticipantPresenceInDayQuery.ParticipantPresenceInDay?>(null) }
     LaunchedEffect(Unit){
-        verifyParticipant = eventRemoteDataSource.participantPresenceInDay(event_id, participant_id, java.time.LocalDateTime.now())
+        verifyParticipant = eventRemoteDataSource.participantPresenceInDay(event_id, participant_id, java.time.LocalDateTime.now()).getOrNull()
     }
 
     return verifyParticipant != null

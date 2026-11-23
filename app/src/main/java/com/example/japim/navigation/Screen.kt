@@ -1,19 +1,14 @@
-
 package com.example.japim.navigation
 
 sealed class Screen(val route: String) {
-
-    // General
     object Login : Screen("login")
     object Home : Screen("home")
-    object RegisterAccount : Screen("register_account")
-
-    // Events
-    object Events : Screen("events")
-
+    object RegisterAccount : Screen("registerAccount")
     object EventDetails : Screen("event_details/{event_id}") {
-        fun createRoute(eventId: String) = "event_details/$eventId"
+        fun createRoute(event_id: String) = "event_details/$event_id"
     }
+
+    object Events : Screen("events")
 
     object RegisterEvent : Screen("register_event")
 
@@ -21,17 +16,16 @@ sealed class Screen(val route: String) {
         fun createRoute(eventId: String) = "register_event/$eventId"
     }
 
-    // Event presence
-    object RequesterPresence : Screen("requester_presence/{event_id}") {
-        fun createRoute(eventId: String) = "requester_presence/$eventId"
+    object RequesterPresence : Screen("requester_presence/{event_id}"){
+        fun createRoute(event_id: String) = "requester_presence/$event_id"
     }
 
-    object ValidateRequesterPresence : Screen("validate_requester_presence/{event_id}") {
-        fun createRoute(eventId: String) = "validate_requester_presence/$eventId"
+    object ValidateRequesterPresence : Screen("validate_requester_presence/{event_id}"){
+        fun createRoute(event_id: String) = "validate_requester_presence/$event_id"
     }
 
-    object ListPresencesInEvent : Screen("event_presences/{event_id}") {
-        fun createRoute(eventId: String) = "event_presences/$eventId"
+    object ListPresencesInEvent : Screen("event_presences/{event_id}"){
+        fun createRoute(event_id: String) = "event_presences/$event_id";
     }
 
     // User
@@ -50,4 +44,6 @@ sealed class Screen(val route: String) {
     object ManageUsers : Screen("manage_users")
     object ManageEvents : Screen("manage_events")
     object ManageRoles : Screen("manage_roles")
+
+    object MyEvents : Screen("myEvents")
 }

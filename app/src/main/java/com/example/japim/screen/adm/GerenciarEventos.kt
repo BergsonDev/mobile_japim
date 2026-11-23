@@ -43,7 +43,7 @@ fun GerenciarEventos(
         events = null
 
         try {
-            events = eventRemoteDataSource.fetchEvents()
+            events = eventRemoteDataSource.fetchEvents().getOrNull()
         } finally {
             carregando = false
         }

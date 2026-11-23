@@ -3,6 +3,7 @@ package com.example.japim.repository
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.graphql.type.EventInputCreate
 import com.example.japim.graphql.type.EventInputUpdate
+import java.time.LocalDateTime
 
 class EventRepository(
     private val remoteDataSource: EventRemoteDataSource
@@ -43,8 +44,9 @@ class EventRepository(
     suspend fun participantPresenceDay(
         eventId: String,
         participantId: String
-    ) = remoteDataSource.participantPresenceDay(
+    ) = remoteDataSource.participantPresenceInDay(
         eventId,
-        participantId
+        participantId,
+        LocalDateTime.now()
     )
 }

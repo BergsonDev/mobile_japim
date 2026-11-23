@@ -37,17 +37,19 @@ import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.AuthQuery
 import com.example.japim.graphql.GetEventByIdQuery
 import com.example.japim.navigation.Screen
+import com.example.japim.remoteDataSource.ApiResponse
 import com.example.japim.remoteDataSource.AuthRemoteDataSource
 import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.components.GenerateErrorToast
+import com.example.japim.ui.components.GenerateSuccessToast
 import com.example.japim.ui.components.tables.GenerateListPresence
-import java.time.LocalDateTime
 import com.example.japim.ui.components.tables.IMembersEvent
 import com.example.japim.ui.theme.FOURTH
 import com.example.japim.ui.theme.MPlus2
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.SECONDARY
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 enum class EventTab {
     PARTICIPANTS,
@@ -58,48 +60,32 @@ private suspend fun confirmPresenceByVolunteer(
     eventRemoteDataSource: EventRemoteDataSource,
     eventId: String,
     participantId: String
-): Boolean {
-    return try {
-        eventRemoteDataSource.confirmedPresenceByVolunteer(eventId, participantId) != null
-    } catch (_: Exception) {
-        false
-    }
+): ApiResponse<Any> {
+    return eventRemoteDataSource.confirmedPresenceByVolunteer(eventId, participantId)
 }
 
 private suspend fun removeConfirmPresenceByVolunteer(
     eventRemoteDataSource: EventRemoteDataSource,
     eventId: String,
     participantId: String
-): Boolean {
-    return try {
-        eventRemoteDataSource.removeConfirmedPresenceByVolunteer(eventId, participantId) != null
-    } catch (_: Exception) {
-        false
-    }
+): ApiResponse<Any> {
+    return eventRemoteDataSource.removeConfirmedPresenceByVolunteer(eventId, participantId)
 }
 
 private suspend fun confirmPresenceByCoordinator(
     eventRemoteDataSource: EventRemoteDataSource,
     eventId: String,
     volunteerID: String
-): Boolean {
-    return try {
-        eventRemoteDataSource.confirmedPresenceByCoordinator(eventId, volunteerID) != null
-    } catch (_: Exception) {
-        false
-    }
+): ApiResponse<Any> {
+    return eventRemoteDataSource.confirmedPresenceByCoordinator(eventId, volunteerID)
 }
 
 private suspend fun removeConfirmPresenceByCoordinator(
     eventRemoteDataSource: EventRemoteDataSource,
     eventId: String,
     volunteerID: String
-): Boolean {
-    return try {
-        eventRemoteDataSource.removeConfirmedPresenceByCoordinator(eventId, volunteerID) != null
-    } catch (_: Exception) {
-        false
-    }
+): ApiResponse<Any> {
+    return eventRemoteDataSource.removeConfirmedPresenceByCoordinator(eventId, volunteerID)
 }
 
 @Composable
@@ -124,37 +110,49 @@ fun EventListPresenceScreen(
 
     var presenceMap by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
 
-    var isError by remember { mutableStateOf(false) }
-    var msgError by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            auth = authRemoteDataSource.auth()
+            authRemoteDataSource.auth()
+                .onSuccess { me, _ -> auth = me }
+                .onError { err, list ->
+                    errorMessage = err
+                    errorList = list
+                }
             isAuthLoading = false
         }
         coroutineScope.launch {
-            val fetchedEvent = eventRemoteDataSource.fetchEventById(event_id)
-            event = fetchedEvent
+            val fetchedEventResponse = eventRemoteDataSource.fetchEventById(event_id)
+            fetchedEventResponse.onSuccess { fetchedEvent, _ ->
+                event = fetchedEvent
 
-            // Check presence for all participants and volunteers
-            val newPresenceMap = mutableMapOf<String, Boolean>()
-            fetchedEvent?.participants?.forEach { participant ->
-                participant?.let {
-                    val presence = eventRemoteDataSource.participantPresenceInDay(event_id, it.id, LocalDateTime.now())
-                    if (presence != null) {
-                        newPresenceMap[it.id] = true
+                // Check presence for all participants and volunteers
+                val newPresenceMap = mutableMapOf<String, Boolean>()
+                fetchedEvent.participants?.forEach { participant ->
+                    participant?.let {
+                        val presenceResult = eventRemoteDataSource.participantPresenceInDay(event_id, it.id, LocalDateTime.now())
+                        if (presenceResult.isSuccess && presenceResult.getOrNull() != null) {
+                            newPresenceMap[it.id] = true
+                        }
                     }
                 }
-            }
-            fetchedEvent?.volunteers?.forEach { volunteer ->
-                volunteer?.let {
-                    val presence = eventRemoteDataSource.participantPresenceInDay(event_id, it.id, LocalDateTime.now())
-                    if (presence != null) {
-                        newPresenceMap[it.id] = true
+                fetchedEvent.volunteers?.forEach { volunteer ->
+                    volunteer?.let {
+                        val presenceResult = eventRemoteDataSource.participantPresenceInDay(event_id, it.id, LocalDateTime.now())
+                        if (presenceResult.isSuccess && presenceResult.getOrNull() != null) {
+                            newPresenceMap[it.id] = true
+                        }
                     }
                 }
+                presenceMap = newPresenceMap
+            }.onError { err, list ->
+                errorMessage = err
+                errorList = list
             }
-            presenceMap = newPresenceMap
+
             isEventLoading = false
         }
     }
@@ -211,119 +209,147 @@ fun EventListPresenceScreen(
         }
     } ?: emptyList()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PRIMARY)
-            .padding(8.dp)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                modifier = Modifier.width(70.dp).padding(0.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = FOURTH
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 10.dp,
-                ),
-                shape = RoundedCornerShape(5),
-                onClick = {
-                    onClickReturn()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PRIMARY)
+                .padding(8.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    modifier = Modifier.width(70.dp).padding(0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = FOURTH
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 10.dp,
+                    ),
+                    shape = RoundedCornerShape(5),
+                    onClick = {
+                        onClickReturn()
+                    }
+                ) {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Default.ArrowBackIosNew,
+                        contentDescription = "Retornar",
+                        tint = PRIMARY
+                    )
                 }
+
+            }
+
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text(
+                    text = "Chamadas",
+                    color = SECONDARY,
+                    fontFamily = MPlus2,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 30.sp
+                )
+
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Retornar",
-                    tint = PRIMARY
+                Button(
+                    onClick = { selectedTab = EventTab.PARTICIPANTS },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedTab == EventTab.PARTICIPANTS) SECONDARY else PRIMARY
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Participantes (${listParticipants.size})",  color=if (selectedTab == EventTab.VOLUNTEERS) SECONDARY else PRIMARY)
+                }
+
+                Button(
+                    onClick = { selectedTab = EventTab.VOLUNTEERS },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedTab == EventTab.VOLUNTEERS) SECONDARY else PRIMARY
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Voluntários (${listVolunteers.size})", color= if (selectedTab == EventTab.VOLUNTEERS) PRIMARY else SECONDARY)
+                }
+            }
+
+            Crossfade(
+                targetState = selectedTab,
+                label = "TableSwitchAnimation",
+                modifier = Modifier.fillMaxSize()
+            ) { tab ->
+                val members = when (tab) {
+                    EventTab.PARTICIPANTS -> listParticipants
+                    EventTab.VOLUNTEERS -> listVolunteers
+                }
+                GenerateListPresence(
+                    event_id = event_id,
+                    members = members,
+                    onCheckedPresence = { eventId, memberId ->
+                        var isSuccess = false
+                        coroutineScope.launch {
+                            val response = when (tab) {
+                                EventTab.PARTICIPANTS -> confirmPresenceByVolunteer(eventRemoteDataSource, eventId, memberId)
+                                EventTab.VOLUNTEERS -> confirmPresenceByCoordinator(eventRemoteDataSource, eventId, memberId)
+                            }
+                            response.onSuccess { _, msg ->
+                                isSuccess = true
+                                successMessage = "Presença confirmada com sucesso!"
+                            }.onError { err, list ->
+                                errorMessage = err
+                                errorList = list
+                            }
+                        }
+                        isSuccess
+                    },
+                    onCheckedRemovePresence = { eventId, memberId ->
+                        var isSuccess = false
+                        coroutineScope.launch {
+                            val response = when (tab) {
+                                EventTab.PARTICIPANTS -> removeConfirmPresenceByVolunteer(eventRemoteDataSource, eventId, memberId)
+                                EventTab.VOLUNTEERS -> removeConfirmPresenceByCoordinator(eventRemoteDataSource, eventId, memberId)
+                            }
+                            response.onSuccess { _, msg ->
+                                isSuccess = true
+                                successMessage = "Presença removida com sucesso!"
+                            }.onError { err, list ->
+                                errorMessage = err
+                                errorList = list
+                            }
+                        }
+                        isSuccess
+                    }
                 )
             }
-
         }
 
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            Text(
-                text = "Chamadas",
-                color = SECONDARY,
-                fontFamily = MPlus2,
-                fontWeight = FontWeight.Bold,
-                fontSize = 30.sp
-            )
-
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            Button(
-                onClick = { selectedTab = EventTab.PARTICIPANTS },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedTab == EventTab.PARTICIPANTS) SECONDARY else PRIMARY
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Participantes (${listParticipants.size})",  color=if (selectedTab == EventTab.VOLUNTEERS) SECONDARY else PRIMARY)
-            }
-
-            Button(
-                onClick = { selectedTab = EventTab.VOLUNTEERS },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedTab == EventTab.VOLUNTEERS) SECONDARY else PRIMARY
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Voluntários (${listVolunteers.size})", color= if (selectedTab == EventTab.VOLUNTEERS) PRIMARY else SECONDARY)
-            }
-        }
-
-        Crossfade(
-            targetState = selectedTab,
-            label = "TableSwitchAnimation",
-            modifier = Modifier.fillMaxSize()
-        ) { tab ->
-            val members = when (tab) {
-                EventTab.PARTICIPANTS -> listParticipants
-                EventTab.VOLUNTEERS -> listVolunteers
-            }
-            GenerateListPresence(
-                event_id = event_id,
-                members = members,
-                onCheckedPresence = { eventId, memberId ->
-                    val success = when (tab) {
-                        EventTab.PARTICIPANTS -> confirmPresenceByVolunteer(eventRemoteDataSource, eventId, memberId)
-                        EventTab.VOLUNTEERS -> confirmPresenceByCoordinator(eventRemoteDataSource, eventId, memberId)
-                    }
-                    if (!success) {
-                        isError = true
-                        msgError = "Erro ao fazer a confirmação para o usuário"
-                    }
-                    success
-                },
-                onCheckedRemovePresence = { eventId, memberId ->
-                    val success = when (tab) {
-                        EventTab.PARTICIPANTS -> removeConfirmPresenceByVolunteer(eventRemoteDataSource, eventId, memberId)
-                        EventTab.VOLUNTEERS -> removeConfirmPresenceByCoordinator(eventRemoteDataSource, eventId, memberId)
-                    }
-                    if (!success) {
-                        isError = true
-                        msgError = "Erro ao remover a confirmação da presença para o usuário"
-                    }
-                    success
+        if (errorMessage != null) {
+            GenerateErrorToast(
+                visible = true,
+                title = "Erro na Chamada",
+                message = errorMessage!!,
+                errors = errorList,
+                onDismiss = {
+                    errorMessage = null
+                    errorList = emptyList()
                 }
             )
         }
-    }
 
-    if (isError && msgError != null) {
-        GenerateErrorToast(
-            true,
-            "Confirmação de Presença",
-            msgError!!,
-            errors = listOf(),
-            { isError = false }
-        )
+        if (successMessage != null) {
+            GenerateSuccessToast(
+                visible = true,
+                title = "Presença",
+                message = successMessage!!,
+                onDismiss = {
+                    successMessage = null
+                }
+            )
+        }
     }
 }
