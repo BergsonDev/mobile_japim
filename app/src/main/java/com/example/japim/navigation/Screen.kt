@@ -21,4 +21,6 @@ sealed class Screen(val route: String) {
     object ListPresencesInEvent : Screen("event_presences/{event_id}"){
         fun createRoute(event_id: String) = "event_presences/$event_id";
     }
+
+    object MyEvents : Screen("myEvents")
 }

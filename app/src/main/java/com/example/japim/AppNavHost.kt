@@ -31,6 +31,7 @@ import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.navigation.Screen
 import com.example.japim.remoteDataSource.AuthRemoteDataSource
 import com.example.japim.remoteDataSource.EventRemoteDataSource
+import com.example.japim.screen.auth.MyEventsScreen
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListPresenceScreen
 import com.example.japim.screen.events.EventListScreen
@@ -52,7 +53,7 @@ private fun ContentPage(navController: NavController, content: @Composable () ->
             navController.navigate("meus_certificados")
         },
         onNavigateToParticipatingEvents = {
-            navController.navigate("eventos_que_participo")
+            navController.navigate(Screen.MyEvents.route)
         },
         contentPage = { paddingInterno ->
             Box(
@@ -555,6 +556,30 @@ fun AppNavHost(tokenProvider: TokenManager) {
                         tokenProvider
                     )
                 }
+        }
+
+        composable(
+            route = Screen.MyEvents.route,
+        ) {
+            backStackEntry->
+            ContentPage(
+                navController,
+                {
+                    MyEventsScreen(
+                        {
+                            navController.popBackStack()
+                        },
+                        tokenProvider,
+                        {
+//                            event_id->///
+                        },
+                        {
+                            event_id->navController.navigate(Screen.EventDetails.createRoute(event_id))
+                        }
+                    )
+                },
+                tokenProvider
+            )
         }
     }
 }
