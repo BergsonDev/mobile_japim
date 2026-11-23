@@ -70,7 +70,7 @@ fun EventListScreen(
 
     val loadEvents: () -> Unit = {
         coroutineScope.launch {
-            events = eventRemoteDataSource.fetchEvents()
+            events = eventRemoteDataSource.fetchEvents().getOrNull()
         }
     }
 

@@ -74,8 +74,8 @@ fun MyEventsScreen(
     LaunchedEffect(Unit) {
         try {
             coroutineScope.launch {
-                auth = authRemoteDataSource.auth()
-                myEvents = authRemoteDataSource.myEvents()
+                auth = authRemoteDataSource.auth().getOrNull()
+                myEvents = authRemoteDataSource.myEvents().getOrNull()
                 isAuthLoading = false
                 if(auth == null){
                     errorMessage = "O servidor retornou vazio"

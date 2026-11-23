@@ -104,7 +104,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                     try {
                         val client = generateApolloClient(tokenProvider)
                         val authRemoteDataSource = AuthRemoteDataSource(client)
-                        val me = authRemoteDataSource.auth()
+                        val me = authRemoteDataSource.auth().getOrNull()
                         if (me != null) {
                             navController.navigate(Screen.Home.route) {
                                 popUpTo("splash") { inclusive = true }
@@ -246,7 +246,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                             scope.launch {
                                 try {
                                     val input = dados.toEventInputCreate()
-                                    val eventoCriado = eventRemoteDataSource.createEvent(input)
+                                    val eventoCriado = eventRemoteDataSource.createEvent(input).getOrNull()
 
                                     if (eventoCriado != null) {
                                         Toast.makeText(
@@ -302,7 +302,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
 
                 LaunchedEffect(eventId) {
                     carregando = true
-                    val evento = eventRemoteDataSource.fetchEventById(eventId)
+                    val evento = eventRemoteDataSource.fetchEventById(eventId).getOrNull()
                     dadosEvento = evento?.toEventFormData()
                     carregando = false
                 }
@@ -331,7 +331,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                                         scope.launch {
                                             try {
                                                 val input = dados.toEventInputUpdate(eventId)
-                                                val eventoAtualizado = eventRemoteDataSource.updateEvent(input)
+                                                val eventoAtualizado = eventRemoteDataSource.updateEvent(input).getOrNull()
 
                                                 if (eventoAtualizado != null) {
                                                     Toast.makeText(
@@ -427,7 +427,7 @@ fun AppNavHost(tokenProvider: TokenManager) {
                         },
                         onDeletarEvento = { eventId ->
                             scope.launch {
-                                val resultado = eventRemoteDataSource.deleteEvent(eventId)
+                                val resultado = eventRemoteDataSource.deleteEvent(eventId).getOrNull()
 
                                 if (resultado != null) {
                                     Toast.makeText(

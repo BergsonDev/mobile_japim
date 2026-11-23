@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,14 +15,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.japim.ui.theme.ERROR
-import com.example.japim.ui.theme.FIFTH
 import com.example.japim.ui.theme.PRIMARY
 import com.example.japim.ui.theme.SECONDARY
 import kotlinx.coroutines.delay
@@ -46,7 +45,7 @@ fun GenerateErrorToast(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 32.dp, start = 16.dp, end = 16.dp).shadow(10.dp),
+            .padding(top = 32.dp, start = 16.dp, end = 16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
         AnimatedVisibility(
@@ -58,10 +57,17 @@ fun GenerateErrorToast(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .clip(RoundedCornerShape(16.dp)),
+                    .shadow(
+                        elevation = 16.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        ambientColor = Color.Black,
+                        spotColor = Color.Black
+                    ),
+                shape = RoundedCornerShape(16.dp),
                 color = SECONDARY,
-                shadowElevation = 8.dp,
-                tonalElevation = 4.dp
+                border = BorderStroke(1.5.dp, PRIMARY),
+                shadowElevation = 16.dp,
+                tonalElevation = 6.dp
             ) {
                 Row(
                     modifier = Modifier
