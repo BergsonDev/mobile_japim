@@ -1,10 +1,18 @@
-package com.example.japim.screen.home
+package com.example.japim
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,11 +22,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.japim.apolloClient.TokenManager
 import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.GetEventsQuery
+import com.example.japim.graphql.type.Event
 import com.example.japim.remoteDataSource.EventRemoteDataSource
+import com.example.japim.ui.components.GenerateErrorToast
+import com.example.japim.ui.components.GenerateHeader
 import com.example.japim.ui.components.cards.GenerateCard
 import com.example.japim.ui.components.search.GenerateSearchBar
 
@@ -28,36 +40,59 @@ private fun ViewStarterPage(
     eventRemote: EventRemoteDataSource? = null,
     onNavigateToDetails: (String) -> Unit = {}
 ){
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .verticalScroll(rememberScrollState())
-    ) {
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorList by remember { mutableStateOf<List<String>>(emptyList()) }
 
-        GenerateSearchBar("teste",{});
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .verticalScroll(rememberScrollState())
+        ) {
 
-        var events by remember {
-            mutableStateOf<List<GetEventsQuery.Event?>?>(emptyList())
-        }
-        LaunchedEffect(Unit) {
-            events = eventRemote?.fetchEvents();
+            GenerateSearchBar("teste",{});
 
-        }
-
-        events?.forEach { event ->
-            if (event != null) {
-                GenerateCard(
-                    event.name,
-                    event.short_description,
-                    event.speakers.firstOrNull()?.name ?: "",
-                    event.total_participants,
-                    event.total_participants,
-                    event.is_payment
-                ) {
-                    onNavigateToDetails(event.id)
+            var events by remember {
+                mutableStateOf<List<GetEventsQuery.Event?>?>(emptyList())
+            }
+            LaunchedEffect(Unit) {
+                try {
+                    events = eventRemote?.fetchEvents()
+                    if (events == null) {
+                        errorMessage = "A consulta retornou nulo."
+                    }
+                } catch (e: Exception) {
+                    errorMessage = e.localizedMessage ?: "Erro desconhecido na consulta"
+                    errorList = listOf(e.javaClass.simpleName)
                 }
             }
+
+            events?.forEach { event ->
+                if (event != null) {
+                    GenerateCard(
+                        event.name,
+                        event.short_description,
+                        event.speakers.firstOrNull()?.name ?: "",
+                        event.total_participants,
+                        event.total_participants,
+                        event.is_payment
+                    ) {
+                        onNavigateToDetails(event.id)
+                    }
+                }
+            }
+        }
+
+        if (errorMessage != null) {
+            GenerateErrorToast(
+                message = errorMessage!!,
+                errors = errorList,
+                onDismiss = {
+                    errorMessage = null
+                    errorList = emptyList()
+                }
+            )
         }
     }
 }

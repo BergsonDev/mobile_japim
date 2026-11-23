@@ -1,3 +1,4 @@
+
 package com.example.japim.navigation
 
 sealed class Screen(val route: String) {
@@ -18,6 +19,19 @@ sealed class Screen(val route: String) {
 
     object UpdateEvent : Screen("register_event/{event_id}") {
         fun createRoute(eventId: String) = "register_event/$eventId"
+    }
+
+    // Event presence
+    object RequesterPresence : Screen("requester_presence/{event_id}") {
+        fun createRoute(eventId: String) = "requester_presence/$eventId"
+    }
+
+    object ValidateRequesterPresence : Screen("validate_requester_presence/{event_id}") {
+        fun createRoute(eventId: String) = "validate_requester_presence/$eventId"
+    }
+
+    object ListPresencesInEvent : Screen("event_presences/{event_id}") {
+        fun createRoute(eventId: String) = "event_presences/$eventId"
     }
 
     // User

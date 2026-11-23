@@ -49,7 +49,8 @@ fun GenerateHeader(
     onNavigateToAdmin: () -> Unit = {},
     onNavigateToCertificates: () -> Unit = {},
     onNavigateToParticipatingEvents: () -> Unit = {},
-    contentPage : @Composable (PaddingValues)  -> Unit
+    contentPage : @Composable (PaddingValues)  -> Unit,
+    onExitAccount : ()-> Unit
 ){
     Scaffold(
         topBar = {
@@ -105,8 +106,8 @@ fun GenerateHeader(
                             onNavigateToEvents = onNavigateToEvents,
                             onNavigateToAdmin = onNavigateToAdmin,
                             onNavigateToCertificates = onNavigateToCertificates,
-                            onNavigateToParticipatingEvents = onNavigateToParticipatingEvents
-
+                            onNavigateToParticipatingEvents = onNavigateToParticipatingEvents,
+                            onExitNavigate = onExitAccount
                         );
                     }
                 }

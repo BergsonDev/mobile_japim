@@ -1,0 +1,17 @@
+query GetParticipantPresenceInDay($id: ID!, $participant_id: ID!, $date_presence: LocalDateTime!){
+    participantPresenceInDay(id: $id, participant_id: $participant_id, date_presence: $date_presence){
+        id
+        confirmed_by {
+            id
+            name
+        }
+        date_presence
+        event {
+            id
+        }
+        participant {
+            id
+            name
+        }
+    }
+}
