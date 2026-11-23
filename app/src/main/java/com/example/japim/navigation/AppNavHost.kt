@@ -2,6 +2,7 @@ package com.example.japim.navigation
 
 import ManageRolesScreen
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -11,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -19,12 +21,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.japim.remoteDataSource.EventRemoteDataSource
+import com.example.japim.remoteDataSource.AuthRemoteDataSource
 import com.example.japim.screen.events.EventDetailScreen
 import com.example.japim.screen.events.EventListPresenceScreen
 import com.example.japim.screen.events.EventListScreen
 import com.example.japim.screen.events.RequesterPresenceScreen
 import com.example.japim.screen.events.ValidateRequesterPresenceScreen
 import com.example.japim.ui.components.GenerateHeader
+import com.example.japim.ui.theme.PRIMARY
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
@@ -117,11 +121,46 @@ fun AppNavHost(tokenProvider: TokenManager) {
         EventRemoteDataSource(apolloClient)
     }
 
+    // Usado na abertura do app para validar o token salvo
+    val authRemoteDataSource = remember(apolloClient) {
+        AuthRemoteDataSource(apolloClient)
+    }
+
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Screen.Splash.route
     ) {
+
+        // VERIFICAÇÃO DE SESSÃO
+        composable(Screen.Splash.route) {
+            LaunchedEffect(Unit) {
+                val token = tokenProvider.getToken()
+
+                val sessaoValida = !token.isNullOrBlank() &&
+                        authRemoteDataSource.auth().getOrNull() != null
+
+                if (sessaoValida) {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                } else {
+                    tokenProvider.limparToken()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = PRIMARY)
+            }
+        }
 
         // LOGIN
         composable("login") {

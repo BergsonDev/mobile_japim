@@ -11,7 +11,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +29,6 @@ import com.example.japim.ui.components.GenerateSuccessToast
 import com.example.japim.ui.events.GenerateEventRequesterPresence
 import com.example.japim.ui.theme.ERROR
 import com.example.japim.ui.theme.PRIMARY
-import kotlinx.coroutines.launch
 
 @Composable
 fun RequesterPresenceScreen(
@@ -42,39 +40,42 @@ fun RequesterPresenceScreen(
     val authRemoteDataSource = remember { AuthRemoteDataSource(client) }
     val eventRemoteDataSource = remember { EventRemoteDataSource(client) }
 
-    val coroutineScope = rememberCoroutineScope()
-
     var auth by remember { mutableStateOf<AuthQuery.Me?>(null) }
     var isAuthLoading by remember { mutableStateOf(true) }
     var requesterPresence by remember { mutableStateOf<RequesterPresenceCodeMutation.RequesterPresenceCode?>(null) }
     var isEventLoading by remember { mutableStateOf(true) }
 
+    var errorTitle by remember { mutableStateOf("Solicitação de Presença") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var errorList by remember { mutableStateOf<List<String>>(emptyList()) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            authRemoteDataSource.auth()
-                .onSuccess { me, _ -> auth = me }
-                .onError { err, list ->
-                    errorMessage = err
-                    errorList = list
-                }
-            isAuthLoading = false
-        }
-        coroutineScope.launch {
+        // Autentica primeiro para que o erro exibido seja sempre o da operação
+        // correta (antes, as duas chamadas rodavam em paralelo e sobrescreviam
+        // o mesmo errorMessage).
+        authRemoteDataSource.auth()
+            .onSuccess { me, _ -> auth = me }
+            .onError { err, list ->
+                errorTitle = "Autenticação"
+                errorMessage = err
+                errorList = list
+            }
+        isAuthLoading = false
+
+        if (auth != null) {
             eventRemoteDataSource.requesterPresenceCode(event_id)
                 .onSuccess { code, msg ->
                     requesterPresence = code
                     successMessage = msg
                 }
                 .onError { err, list ->
+                    errorTitle = "Solicitação de Presença"
                     errorMessage = err
                     errorList = list
                 }
-            isEventLoading = false
         }
+        isEventLoading = false
     }
 
     if (isAuthLoading || isEventLoading) {
@@ -94,9 +95,21 @@ fun RequesterPresenceScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "erro na autenticação para detalhes de eventos",
+                text = errorMessage ?: "Erro na autenticação para solicitar presença",
                 color = ERROR
             )
+            if (errorMessage != null) {
+                GenerateErrorToast(
+                    title = "Autenticação",
+                    message = errorMessage!!,
+                    errors = errorList,
+                    onDismiss = {
+                        errorMessage = null
+                        errorList = emptyList()
+                        onClickReturn()
+                    }
+                )
+            }
         }
         return
     }
@@ -107,9 +120,21 @@ fun RequesterPresenceScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = errorMessage ?: "erro na consulta de eventos para gerar o código de validação",
+                text = errorMessage ?: "Erro ao gerar o código de presença",
                 color = ERROR
             )
+            if (errorMessage != null) {
+                GenerateErrorToast(
+                    title = "Solicitação de Presença",
+                    message = errorMessage!!,
+                    errors = errorList,
+                    onDismiss = {
+                        errorMessage = null
+                        errorList = emptyList()
+                        onClickReturn()
+                    }
+                )
+            }
         }
         return
     }
@@ -131,6 +156,7 @@ fun RequesterPresenceScreen(
 
         if (errorMessage != null) {
             GenerateErrorToast(
+                title = errorTitle,
                 message = errorMessage!!,
                 errors = errorList,
                 onDismiss = {
@@ -142,6 +168,7 @@ fun RequesterPresenceScreen(
 
         if (successMessage != null) {
             GenerateSuccessToast(
+                title = "Solicitação de Presença",
                 message = successMessage!!,
                 onDismiss = {
                     successMessage = null

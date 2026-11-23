@@ -40,7 +40,6 @@ import com.example.japim.remoteDataSource.EventRemoteDataSource
 import com.example.japim.ui.components.GenerateErrorToast
 import com.example.japim.ui.components.GenerateSuccessToast
 import com.example.japim.ui.events.GenerateEventDetails
-import com.example.japim.ui.theme.ERROR
 import com.example.japim.ui.theme.FOURTH
 import com.example.japim.ui.theme.MPlus2
 import com.example.japim.ui.theme.PRIMARY
@@ -66,8 +65,10 @@ fun EventDetailScreen(
     var event by remember { mutableStateOf<GetEventByIdQuery.Event?>(null) }
     var isEventLoading by remember { mutableStateOf(true) }
 
+    var errorTitle by remember { mutableStateOf("Consulta de Evento") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var errorList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var successTitle by remember { mutableStateOf("Consulta de Evento") }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
     suspend fun fetchEventData() {
@@ -76,6 +77,7 @@ fun EventDetailScreen(
                 event = data
             }
             .onError { err, list ->
+                errorTitle = "Consulta de Evento"
                 errorMessage = err
                 errorList = list
             }
@@ -89,6 +91,7 @@ fun EventDetailScreen(
                     auth = me
                 }
                 .onError { err, list ->
+                    errorTitle = "Autenticação"
                     errorMessage = err
                     errorList = list
                 }
@@ -111,15 +114,12 @@ fun EventDetailScreen(
 
     val currentUser = auth
     if (currentUser == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "erro na autenticação para detalhes de eventos",
-                color = ERROR
-            )
-        }
+        GenerateErrorToast(
+            title = "Autenticação",
+            message = errorMessage ?: "Erro na autenticação para detalhes de eventos",
+            errors = errorList,
+            onDismiss = onClickReturn
+        )
         return
     }
 
@@ -184,11 +184,13 @@ fun EventDetailScreen(
                             eventRemoteDataSource.subscribeParticipant(event_id)
                                 .onSuccess { res, msg ->
                                     Log.d("Subscribe", "Inscrição realizada com sucesso: ${res.id}")
-                                    successMessage = "Inscrição como participante realizada com sucesso!"
+                                    successTitle = "Inscrição como Participante"
+                                    successMessage = msg
                                     fetchEventData()
                                 }
                                 .onError { err, list ->
                                     Log.e("Subscribe", "Falha ao se inscrever: $err")
+                                    errorTitle = "Inscrição como Participante"
                                     errorMessage = err
                                     errorList = list
                                 }
@@ -199,11 +201,13 @@ fun EventDetailScreen(
                             eventRemoteDataSource.subscribeVolunteer(event_id)
                                 .onSuccess { res, msg ->
                                     Log.d("Subscribe", "Inscrição realizada como voluntário com sucesso: ${res.id}")
-                                    successMessage = "Inscrição como voluntário realizada com sucesso!"
+                                    successTitle = "Inscrição como Voluntário"
+                                    successMessage = msg
                                     fetchEventData()
                                 }
                                 .onError { err, list ->
                                     Log.e("Subscribe", "Falha ao se inscrever como voluntário: $err")
+                                    errorTitle = "Inscrição como Voluntário"
                                     errorMessage = err
                                     errorList = list
                                 }
@@ -217,11 +221,13 @@ fun EventDetailScreen(
                             eventRemoteDataSource.finishEvent(it.id)
                                 .onSuccess { res, msg ->
                                     Log.d("Presence", "Evento Finalizado com sucesso: ${res.id}")
-                                    successMessage = "Evento finalizado com sucesso!"
+                                    successTitle = "Finalização do Evento"
+                                    successMessage = msg
                                     fetchEventData()
                                 }
                                 .onError { err, list ->
                                     Log.e("Presence", "Falha ao Finalizar o evento: $err")
+                                    errorTitle = "Finalização do Evento"
                                     errorMessage = err
                                     errorList = list
                                 }
@@ -239,6 +245,7 @@ fun EventDetailScreen(
 
         if (errorMessage != null) {
             GenerateErrorToast(
+                title = errorTitle,
                 message = errorMessage!!,
                 errors = errorList,
                 onDismiss = {
@@ -250,6 +257,7 @@ fun EventDetailScreen(
 
         if (successMessage != null) {
             GenerateSuccessToast(
+                title = successTitle,
                 message = successMessage!!,
                 onDismiss = {
                     successMessage = null

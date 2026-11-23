@@ -42,6 +42,10 @@ fun GenerateErrorToast(
         }
     }
 
+    // A mensagem principal já é o primeiro erro retornado pela API; evita exibi-la
+    // duplicada na lista de detalhes.
+    val detailErrors = errors.filterNot { it == message }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -97,9 +101,9 @@ fun GenerateErrorToast(
                             color = PRIMARY,
                             fontSize = 13.sp
                         )
-                        if (errors.isNotEmpty()) {
+                        if (detailErrors.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            errors.forEach { err ->
+                            detailErrors.forEach { err ->
                                 Text(
                                     text = "• $err",
                                     color = ERROR,

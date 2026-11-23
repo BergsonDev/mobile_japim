@@ -1,4 +1,3 @@
-
 package com.example.japim
 
 import android.os.Bundle
@@ -15,9 +14,13 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        // Instância única para toda a Activity, evitando recriar o ApolloClient
+        // a cada recomposição.
+        val tokenManager = TokenManager(this)
+
         setContent {
             JAPIMTheme {
-                AppNavHost(TokenManager(this))
+                AppNavHost(tokenManager)
             }
         }
     }
