@@ -1,0 +1,16 @@
+
+query Me {
+    me {
+        id
+        name
+        role {
+            id
+            name
+            initialism
+            permissions {
+                id
+                name
+            }
+        }
+    }
+}

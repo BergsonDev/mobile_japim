@@ -1,5 +1,4 @@
-
-package com.example.japim
+package com.example.japim.screen.adm
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,8 +16,7 @@ import com.example.japim.ui.theme.*
 @Composable
 fun PaginaAdmin(
     onGerenciarUsuarios: () -> Unit = {},
-    onCadastrarUsuario: () -> Unit = {},
-    onGerenciarEventos: () -> Unit = {},
+    onGerenciarCargos: () -> Unit = {},
     onVoltar: () -> Unit = {}
 ) {
     Column(
@@ -50,15 +48,17 @@ fun PaginaAdmin(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        BotaoAdmin("Gerenciar Usuários", onGerenciarUsuarios)
+        BotaoAdmin(
+            "Gerenciar Usuários",
+            onGerenciarUsuarios
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        BotaoAdmin("Cadastrar Usuário", onCadastrarUsuario)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        BotaoAdmin("Gerenciar Eventos", onGerenciarEventos)
+        BotaoAdmin(
+            "Gerenciar Cargos",
+            onGerenciarCargos
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 

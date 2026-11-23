@@ -1,0 +1,18 @@
+query MyCertificates {
+    myCertificates {
+        id
+        date_generated
+        user {
+            id
+            name
+        }
+        event {
+            id
+            name
+            short_description
+            date_start
+            date_end
+            workload
+        }
+    }
+}

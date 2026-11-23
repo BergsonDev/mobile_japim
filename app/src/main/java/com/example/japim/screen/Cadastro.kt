@@ -1,6 +1,6 @@
+package com.example.japim.screen
 
-package com.example.japim
-
+import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,20 +22,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.japim.R
 import com.example.japim.apolloClient.TokenManager
-
 import com.example.japim.ui.theme.*
 import com.example.japim.apolloClient.generateApolloClient
 import com.example.japim.graphql.CreateUserMutation
 import com.example.japim.graphql.type.UserInputCreate
-
 import kotlinx.coroutines.launch
+import com.example.japim.viewmodel.RoleViewModel
+import com.example.japim.components.RoleDropdown
+import com.example.japim.graphql.RolesQuery
 
 @Composable
 fun Cadastro(
     modifier: Modifier = Modifier,
     onVoltarLogin: () -> Unit = {},
     tokenProvider : TokenManager,
+    isAdminRegistration: Boolean = false,
+    roleViewModel: RoleViewModel? = null
 ) {
 
     var nome by remember { mutableStateOf("") }
@@ -45,6 +49,20 @@ fun Cadastro(
     var senha by remember { mutableStateOf("") }
     var ra by remember { mutableStateOf("") }
     var alunoFucapi by remember { mutableStateOf(false) }
+    var selectedRoleId by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    val roles = roleViewModel?.roles
+        ?.collectAsState()?.value
+        ?: emptyList<RolesQuery.Role>()
+
+    val isLoadingRoles = roleViewModel?.isLoading
+        ?.collectAsState()?.value
+        ?: false
+
+    val roleError = roleViewModel?.error
+        ?.collectAsState()?.value
 
     var carregando by remember { mutableStateOf(false) }
     var mensagemErro by remember { mutableStateOf<String?>(null) }
@@ -72,7 +90,11 @@ fun Cadastro(
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "Criação de Conta",
+            text = if (isAdminRegistration) {
+                "Cadastro de Usuário"
+            } else {
+                "Criação de Conta"
+            },
             color = SECONDARY,
             fontFamily = MPlus2,
             fontWeight = FontWeight.Bold,
@@ -163,6 +185,43 @@ fun Cadastro(
                 tipoTeclado = KeyboardType.Number
             )
         }
+        if (isAdminRegistration) {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            RoleDropdown(
+                roles = roles,
+                selectedRoleId = selectedRoleId,
+                onRoleSelected = {
+                    selectedRoleId = it
+                },
+                enabled = !carregando && !isAdminRegistration,
+                isLoading = isLoadingRoles
+            )
+
+            roleError?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = error,
+                    color = Color.Red,
+                    fontFamily = MPlus2,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                TextButton(
+                    onClick = {
+                        roleViewModel?.loadRoles()
+                    }
+                ) {
+                    Text(
+                        text = "Tentar novamente",
+                        color = SECONDARY
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(25.dp))
 
@@ -208,7 +267,7 @@ fun Cadastro(
                             "O CPF deve conter 11 dígitos."
                     }
 
-                    !android.util.Patterns.EMAIL_ADDRESS
+                    !Patterns.EMAIL_ADDRESS
                         .matcher(email.trim()).matches() -> {
                         mensagemErro =
                             "Informe um e-mail válido."
@@ -303,7 +362,11 @@ fun Cadastro(
                 )
             } else {
                 Text(
-                    text = "Criar Conta",
+                    text = if (isAdminRegistration) {
+                        "Cadastrar Usuário"
+                    } else {
+                        "Criar Conta"
+                    },
                     color = FOURTH,
                     fontFamily = MPlus2,
                     fontWeight = FontWeight.Bold
@@ -311,7 +374,21 @@ fun Cadastro(
             }
         }
 
+        if (isAdminRegistration) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Cadastro com seleção de cargo aguardando integração.",
+                color = SECONDARY,
+                fontFamily = MPlus2,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
+
+
 
         // Limpar formulário
         Button(
@@ -323,6 +400,7 @@ fun Cadastro(
                 senha = ""
                 ra = ""
                 alunoFucapi = false
+                selectedRoleId = null
                 mensagemErro = null
                 mensagemSucesso = null
             },
@@ -357,7 +435,11 @@ fun Cadastro(
             )
         ) {
             Text(
-                text = "Voltar ao Login",
+                text = if (isAdminRegistration) {
+                    "Voltar"
+                } else {
+                    "Voltar ao Login"
+                },
                 color = PRIMARY,
                 fontFamily = MPlus2,
                 fontWeight = FontWeight.Bold,

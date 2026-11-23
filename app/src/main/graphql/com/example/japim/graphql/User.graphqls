@@ -17,7 +17,7 @@ type User {
 }
 
 input UserInputCreate{
-    name : String! 
+    name : String!
     email : String!
     password : String!
     cpf : String!
@@ -26,7 +26,7 @@ input UserInputCreate{
 
 input UserInputUpdate{
     id : ID!
-    name : String! 
+    name : String!
     email : String!
     password : String!
     cpf : String!
@@ -37,6 +37,7 @@ extend type Query {
     users : [User!]
     user(id : ID!) : User!
     me: User!
+    eventsSubscribe: [Event]!
 }
 
 extend type Mutation{
@@ -44,5 +45,4 @@ extend type Mutation{
     updateUser(input : UserInputUpdate!) : User!
     delete(id : ID!) : User!
     desativeAccount(id : ID!) : User!
-
 }

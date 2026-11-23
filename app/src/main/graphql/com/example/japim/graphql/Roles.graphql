@@ -1,0 +1,11 @@
+query Roles {
+    roles {
+        id
+        name
+        initialism
+        permissions {
+            id
+            name
+        }
+    }
+}
